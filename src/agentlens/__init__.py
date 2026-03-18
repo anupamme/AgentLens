@@ -11,15 +11,21 @@ from agentlens.schema.enums import (
     TaskCategory,
 )
 from agentlens.schema.trace import ActionRecord, EscalationEvent, SessionTrace
+from agentlens.sdk.action_context import ActionContext
+from agentlens.sdk.tracer import AgentTracer
+from agentlens.sdk.writer import TraceWriter
 
 __all__ = [
+    "ActionContext",
     "ActionOutcome",
     "ActionRecord",
     "ActionType",
+    "AgentTracer",
     "AutonomyLevel",
     "EscalationEvent",
     "EscalationReason",
     "SessionOutcome",
     "SessionTrace",
     "TaskCategory",
+    "TraceWriter",
 ]
