@@ -1,0 +1,10 @@
+{
+  "session_id": "sess-invalid-001",
+  "agent_id": "test-agent",
+  "task_category": "research",
+  "session_outcome": "success",
+  "start_time": "2025-01-01T00:00:00Z",
+  "end_time": "2025-01-01T00:01:00Z",
+  "actions": [],
+  "schema_version": "1.0"
+}

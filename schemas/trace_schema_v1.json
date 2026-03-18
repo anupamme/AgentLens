@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "ActionOutcome": {
+      "description": "Outcome of an individual action.",
+      "enum": [
+        "success",
+        "failure",
+        "partial",
+        "timeout",
+        "skipped"
+      ],
+      "title": "ActionOutcome",
+      "type": "string"
+    },
+    "ActionRecord": {
+      "description": "A single action taken by an agent during a session.",
+      "properties": {
+        "action_id": {
+          "description": "Unique identifier for this action",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "action_type": {
+          "$ref": "#/$defs/ActionType"
+        },
+        "autonomy_level": {
+          "$ref": "#/$defs/AutonomyLevel"
+        },
+        "outcome": {
+          "$ref": "#/$defs/ActionOutcome"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "input_hash": {
+          "description": "Hashed representation of the input",
+          "title": "Input Hash",
+          "type": "string"
+        },
+        "output_summary": {
+          "description": "Truncated summary of the output",
+          "title": "Output Summary",
+          "type": "string"
+        },
+        "tool_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of tool used, if any",
+          "title": "Tool Name"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "action_id",
+        "action_type",
+        "autonomy_level",
+        "outcome",
+        "timestamp",
+        "duration_ms",
+        "input_hash",
+        "output_summary"
+      ],
+      "title": "ActionRecord",
+      "type": "object"
+    },
+    "ActionType": {
+      "description": "Types of actions an agent can take.",
+      "enum": [
+        "read",
+        "write",
+        "execute",
+        "search",
+        "communicate",
+        "reason"
+      ],
+      "title": "ActionType",
+      "type": "string"
+    },
+    "AutonomyLevel": {
+      "description": "Level of human oversight for an action.",
+      "enum": [
+        "full_auto",
+        "auto_with_audit",
+        "human_confirmed",
+        "human_driven"
+      ],
+      "title": "AutonomyLevel",
+      "type": "string"
+    },
+    "EscalationEvent": {
+      "description": "An event where the agent escalated to a human.",
+      "properties": {
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/EscalationReason"
+        },
+        "action_id": {
+          "description": "ID of the action that triggered escalation",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 200,
+          "title": "Description",
+          "type": "string"
+        },
+        "resolved": {
+          "default": false,
+          "title": "Resolved",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "timestamp",
+        "reason",
+        "action_id",
+        "description"
+      ],
+      "title": "EscalationEvent",
+      "type": "object"
+    },
+    "EscalationReason": {
+      "description": "Reason for escalating to a human.",
+      "enum": [
+        "confidence_low",
+        "risk_high",
+        "policy_required",
+        "user_requested",
+        "error_repeated",
+        "scope_exceeded"
+      ],
+      "title": "EscalationReason",
+      "type": "string"
+    },
+    "SessionOutcome": {
+      "description": "Overall outcome of an agent session.",
+      "enum": [
+        "success",
+        "failure",
+        "partial",
+        "timeout",
+        "escalated"
+      ],
+      "title": "SessionOutcome",
+      "type": "string"
+    },
+    "TaskCategory": {
+      "description": "High-level category of the agent's task.",
+      "enum": [
+        "code_review",
+        "code_generation",
+        "research",
+        "data_analysis",
+        "communication",
+        "system_admin",
+        "other"
+      ],
+      "title": "TaskCategory",
+      "type": "string"
+    }
+  },
+  "description": "Complete trace of an agent session.",
+  "properties": {
+    "session_id": {
+      "description": "Unique session identifier",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "agent_id": {
+      "description": "Identifier for the agent",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "task_category": {
+      "$ref": "#/$defs/TaskCategory"
+    },
+    "session_outcome": {
+      "$ref": "#/$defs/SessionOutcome"
+    },
+    "start_time": {
+      "format": "date-time",
+      "title": "Start Time",
+      "type": "string"
+    },
+    "end_time": {
+      "format": "date-time",
+      "title": "End Time",
+      "type": "string"
+    },
+    "actions": {
+      "items": {
+        "$ref": "#/$defs/ActionRecord"
+      },
+      "minItems": 1,
+      "title": "Actions",
+      "type": "array"
+    },
+    "escalations": {
+      "items": {
+        "$ref": "#/$defs/EscalationEvent"
+      },
+      "title": "Escalations",
+      "type": "array"
+    },
+    "total_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Total Tokens",
+      "type": "integer"
+    },
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "session_id",
+    "agent_id",
+    "task_category",
+    "session_outcome",
+    "start_time",
+    "end_time",
+    "actions"
+  ],
+  "title": "SessionTrace",
+  "type": "object"
+}
