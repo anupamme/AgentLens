@@ -1,5 +1,7 @@
 """Tests for the cross-session aggregator."""
 
+from datetime import datetime, timezone
+
 import pytest
 
 from agentlens.schema.enums import SessionOutcome, TaskCategory
@@ -29,6 +31,8 @@ def make_summary(**overrides):
         "escalation_count": 0,
         "escalation_reasons": [],
         "did_fail_gracefully": True,
+        "start_time": datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        "end_time": datetime(2025, 1, 1, 12, 5, 0, tzinfo=timezone.utc),
         "duration_seconds": 120.0,
         "total_latency_ms": 5000,
         "session_outcome": SessionOutcome.SUCCESS,
@@ -72,6 +76,34 @@ class TestComputeStatistics:
         assert abs(stats["mean_duration_seconds"] - 150.0) < 0.01
         assert abs(stats["mean_actions_per_session"] - 15.0) < 0.01
         assert stats["outcome_distribution"] == {"success": 1, "partial": 1}
+
+    def test_time_range_from_sessions(self):
+        """Verify time_range reflects actual session timestamps, not aggregation time."""
+        summaries = [
+            make_summary(
+                session_id="s1",
+                start_time=datetime(2025, 1, 10, 8, 0, 0, tzinfo=timezone.utc),
+                end_time=datetime(2025, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
+            ),
+            make_summary(
+                session_id="s2",
+                start_time=datetime(2025, 1, 5, 14, 0, 0, tzinfo=timezone.utc),
+                end_time=datetime(2025, 1, 5, 15, 0, 0, tzinfo=timezone.utc),
+            ),
+            make_summary(
+                session_id="s3",
+                start_time=datetime(2025, 1, 12, 10, 0, 0, tzinfo=timezone.utc),
+                end_time=datetime(2025, 1, 12, 11, 30, 0, tzinfo=timezone.utc),
+            ),
+        ]
+        stats = compute_statistics(summaries)
+
+        assert stats["time_range"]["start"] == datetime(
+            2025, 1, 5, 14, 0, 0, tzinfo=timezone.utc
+        ).isoformat()
+        assert stats["time_range"]["end"] == datetime(
+            2025, 1, 12, 11, 30, 0, tzinfo=timezone.utc
+        ).isoformat()
 
     def test_single_session(self):
         """Edge case: single summary should not cause errors."""

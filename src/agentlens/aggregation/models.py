@@ -57,6 +57,10 @@ class SessionSummary(BaseModel):
     escalation_reasons: list[str]
     did_fail_gracefully: bool
 
+    # --- Timing ---
+    start_time: datetime
+    end_time: datetime
+
     # --- Performance ---
     duration_seconds: float
     total_latency_ms: int

@@ -103,6 +103,8 @@ def _compute_base_fields(trace: SessionTrace) -> dict:
         "session_id": trace.session_id,
         "agent_type": trace.agent_id,
         "task_category": trace.task_category,
+        "start_time": trace.start_time,
+        "end_time": trace.end_time,
         "total_actions": total,
         "autonomy_distribution": autonomy_distribution,
         "tools_used": tools_used,
@@ -228,4 +230,10 @@ class SessionSummarizer(BaseSummarizer):
             }],
         )
         raw_text = _strip_markdown_fences(response.content[0].text)
-        return SessionSummary.model_validate_json(raw_text)
+        try:
+            return SessionSummary.model_validate_json(raw_text)
+        except Exception as exc:
+            raise ValueError(
+                f"Failed to parse LLM summary for session {trace.session_id}: {exc}\n"
+                f"Raw LLM output:\n{response.content[0].text[:500]}"
+            ) from exc

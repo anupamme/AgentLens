@@ -142,12 +142,10 @@ def compute_statistics(summaries: list[SessionSummary]) -> dict:
         s.session_outcome.value for s in summaries
     ))
 
-    # Time range
-    # Use generated_at-like heuristic: earliest and latest sessions
-    # Since SessionSummary doesn't have timestamps, use duration as proxy
+    # Time range from actual session timestamps
     time_range = {
-        "start": datetime.now(timezone.utc).isoformat(),
-        "end": datetime.now(timezone.utc).isoformat(),
+        "start": min(s.start_time for s in summaries).isoformat(),
+        "end": max(s.end_time for s in summaries).isoformat(),
     }
 
     return {
@@ -347,9 +345,15 @@ class SessionAggregator(BaseAggregator):
             }],
         )
         raw_text = _strip_markdown_fences(response.content[0].text)
-        parsed = json.loads(raw_text)
-        return {
-            "executive_summary": parsed["executive_summary"],
-            "key_findings": parsed["key_findings"],
-            "concerns": parsed["concerns"],
-        }
+        try:
+            parsed = json.loads(raw_text)
+            return {
+                "executive_summary": parsed["executive_summary"],
+                "key_findings": parsed["key_findings"],
+                "concerns": parsed["concerns"],
+            }
+        except (json.JSONDecodeError, KeyError) as exc:
+            raise ValueError(
+                f"Failed to parse LLM narrative response: {exc}\n"
+                f"Raw LLM output:\n{response.content[0].text[:500]}"
+            ) from exc
