@@ -14,17 +14,22 @@ from agentlens.schema.trace import ActionRecord, EscalationEvent, SessionTrace
 from agentlens.sdk.action_context import ActionContext
 from agentlens.sdk.tracer import AgentTracer
 from agentlens.sdk.writer import TraceWriter
+from agentlens.aggregation.models import AggregateReport, SessionSummary
+from agentlens.aggregation.pipeline import AgentLensPipeline
 
 __all__ = [
     "ActionContext",
     "ActionOutcome",
     "ActionRecord",
     "ActionType",
+    "AgentLensPipeline",
     "AgentTracer",
+    "AggregateReport",
     "AutonomyLevel",
     "EscalationEvent",
     "EscalationReason",
     "SessionOutcome",
+    "SessionSummary",
     "SessionTrace",
     "TaskCategory",
     "TraceWriter",

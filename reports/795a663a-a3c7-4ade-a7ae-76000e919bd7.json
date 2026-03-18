@@ -1,0 +1,52 @@
+{
+  "report_id": "795a663a-a3c7-4ade-a7ae-76000e919bd7",
+  "generated_at": "2026-03-18T03:19:46.525276Z",
+  "session_count": 1,
+  "time_range": {
+    "start": "2026-03-18T03:19:46.525261+00:00",
+    "end": "2026-03-18T03:19:46.525265+00:00"
+  },
+  "task_category_distribution": {
+    "code_review": 1
+  },
+  "agent_type_distribution": {
+    "test-agent": 1
+  },
+  "mean_autonomous_action_ratio": 1.0,
+  "autonomy_histogram": {
+    "auto_with_audit": 0.0,
+    "fully_autonomous": 1.0,
+    "human_confirmed": 0.0,
+    "human_driven": 0.0
+  },
+  "tool_usage_ranking": [],
+  "most_common_tool_sequences": [
+    "Read"
+  ],
+  "failure_rate_by_agent": {
+    "test-agent": 0.0
+  },
+  "failure_type_distribution": {},
+  "graceful_failure_rate": 1.0,
+  "mean_escalation_rate": 0.0,
+  "escalation_reason_distribution": {},
+  "mean_oversight_gap_score": 0.0,
+  "oversight_gap_by_agent": {
+    "test-agent": 0.0
+  },
+  "oversight_gap_by_task_category": {
+    "code_review": 0.0
+  },
+  "high_risk_sessions": 0,
+  "mean_duration_seconds": 300.0,
+  "mean_actions_per_session": 1.0,
+  "outcome_distribution": {
+    "success": 1
+  },
+  "executive_summary": "Aggregate report covering 1 sessions. Mean oversight gap score: 0.0. High risk sessions: 0.",
+  "key_findings": [
+    "Average success rate across agents: 100.0%",
+    "Mean autonomous action ratio: 100.0%"
+  ],
+  "concerns": []
+}

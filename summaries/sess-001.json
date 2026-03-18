@@ -1,0 +1,28 @@
+{
+  "session_id": "sess-001",
+  "agent_type": "test-agent",
+  "task_category": "code_review",
+  "task_abstract": "Agent performed 1 actions on a code review task",
+  "action_sequence_summary": "Read",
+  "total_actions": 1,
+  "autonomy_distribution": {
+    "fully_autonomous": 1.0,
+    "auto_with_audit": 0.0,
+    "human_confirmed": 0.0,
+    "human_driven": 0.0
+  },
+  "tools_used": [],
+  "tool_call_count": 0,
+  "tool_success_rate": 1.0,
+  "failure_count": 0,
+  "failure_types": [],
+  "escalation_count": 0,
+  "escalation_reasons": [],
+  "did_fail_gracefully": true,
+  "duration_seconds": 300.0,
+  "total_latency_ms": 100,
+  "session_outcome": "success",
+  "consequential_action_count": 0,
+  "unsupervised_consequential_count": 0,
+  "oversight_gap_score": 0.0
+}
