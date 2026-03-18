@@ -16,6 +16,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from agentlens.aggregation.models import AggregateReport, SessionSummary
+from agentlens.aggregation.summarizer import _strip_markdown_fences
 
 
 def compute_statistics(summaries: list[SessionSummary]) -> dict:
@@ -285,7 +286,10 @@ class SessionAggregator(BaseAggregator):
     )
 
     def __init__(
-        self, api_key: str | None = None, model: str = "claude-haiku-4-5-20251001"
+        self,
+        api_key: str | None = None,
+        model: str = "claude-haiku-4-5-20251001",
+        aws_region: str | None = None,
     ) -> None:
         try:
             import anthropic
@@ -294,7 +298,10 @@ class SessionAggregator(BaseAggregator):
                 "The 'anthropic' package is required for SessionAggregator. "
                 "Install it with: pip install agentlens[aggregation]"
             ) from e
-        self.client = anthropic.AsyncAnthropic(api_key=api_key)
+        if aws_region:
+            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+        else:
+            self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = model
 
     async def aggregate(self, summaries: list[SessionSummary]) -> AggregateReport:
@@ -339,7 +346,7 @@ class SessionAggregator(BaseAggregator):
                 "content": f"Generate a narrative report for this data:\n\n{context}",
             }],
         )
-        raw_text = response.content[0].text
+        raw_text = _strip_markdown_fences(response.content[0].text)
         parsed = json.loads(raw_text)
         return {
             "executive_summary": parsed["executive_summary"],

@@ -15,6 +15,8 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections import Counter
 
+import re
+
 from agentlens.schema.enums import (
     ActionOutcome,
     ActionType,
@@ -26,6 +28,15 @@ from agentlens.aggregation.models import (
     CONSEQUENTIAL_ACTION_TYPES,
     SessionSummary,
 )
+
+
+def _strip_markdown_fences(text: str) -> str:
+    """Strip markdown code fences (```json ... ```) from LLM output."""
+    stripped = text.strip()
+    match = re.search(r"```(?:json)?\s*\n?(.*?)```", stripped, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return stripped
 
 
 def _compute_base_fields(trace: SessionTrace) -> dict:
@@ -185,7 +196,10 @@ class SessionSummarizer(BaseSummarizer):
     )
 
     def __init__(
-        self, api_key: str | None = None, model: str = "claude-haiku-4-5-20251001"
+        self,
+        api_key: str | None = None,
+        model: str = "claude-haiku-4-5-20251001",
+        aws_region: str | None = None,
     ) -> None:
         try:
             import anthropic
@@ -194,7 +208,10 @@ class SessionSummarizer(BaseSummarizer):
                 "The 'anthropic' package is required for SessionSummarizer. "
                 "Install it with: pip install agentlens[aggregation]"
             ) from e
-        self.client = anthropic.AsyncAnthropic(api_key=api_key)
+        if aws_region:
+            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+        else:
+            self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = model
 
     async def summarize(self, trace: SessionTrace) -> SessionSummary:
@@ -210,5 +227,5 @@ class SessionSummarizer(BaseSummarizer):
                 ),
             }],
         )
-        raw_text = response.content[0].text
+        raw_text = _strip_markdown_fences(response.content[0].text)
         return SessionSummary.model_validate_json(raw_text)

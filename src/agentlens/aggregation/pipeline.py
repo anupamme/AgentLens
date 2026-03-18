@@ -29,6 +29,7 @@ class AgentLensPipeline:
         use_mock: bool = False,
         summarizer_model: str = "claude-haiku-4-5-20251001",
         aggregator_model: str = "claude-haiku-4-5-20251001",
+        aws_region: str | None = None,
     ) -> None:
         self.traces_dir = Path(traces_dir)
         self.summaries_dir = Path(summaries_dir)
@@ -39,10 +40,10 @@ class AgentLensPipeline:
             self.aggregator: BaseAggregator = MockAggregator()
         else:
             self.summarizer = SessionSummarizer(
-                api_key=api_key, model=summarizer_model
+                api_key=api_key, model=summarizer_model, aws_region=aws_region
             )
             self.aggregator = SessionAggregator(
-                api_key=api_key, model=aggregator_model
+                api_key=api_key, model=aggregator_model, aws_region=aws_region
             )
 
     def load_traces(self) -> list[SessionTrace]:

@@ -44,6 +44,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sp_summarize.add_argument(
         "--max-concurrency", type=int, default=5, help="Max concurrent API calls"
     )
+    sp_summarize.add_argument(
+        "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
+    )
+    sp_summarize.add_argument(
+        "--model", default=None,
+        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
+    )
 
     # --- aggregate ---
     sp_aggregate = subparsers.add_parser(
@@ -58,6 +65,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sp_aggregate.add_argument(
         "--mock", action="store_true", help="Use MockAggregator (no API calls)"
+    )
+    sp_aggregate.add_argument(
+        "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
+    )
+    sp_aggregate.add_argument(
+        "--model", default=None,
+        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
     )
 
     # --- run ---
@@ -76,15 +90,27 @@ def _build_parser() -> argparse.ArgumentParser:
     sp_run.add_argument(
         "--max-concurrency", type=int, default=5, help="Max concurrent API calls"
     )
+    sp_run.add_argument(
+        "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
+    )
+    sp_run.add_argument(
+        "--model", default=None,
+        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
+    )
 
     return parser
 
 
 async def _cmd_summarize(args: argparse.Namespace) -> None:
+    model_kwargs = {}
+    if args.model:
+        model_kwargs["summarizer_model"] = args.model
     pipeline = AgentLensPipeline(
         traces_dir=args.traces_dir,
         summaries_dir=args.output,
         use_mock=args.mock,
+        aws_region=args.aws_region,
+        **model_kwargs,
     )
     traces = pipeline.load_traces()
     if not traces:
@@ -113,7 +139,10 @@ async def _cmd_aggregate(args: argparse.Namespace) -> None:
     if args.mock:
         aggregator = MockAggregator()
     else:
-        aggregator = SessionAggregator()
+        agg_kwargs = {"aws_region": args.aws_region}
+        if args.model:
+            agg_kwargs["model"] = args.model
+        aggregator = SessionAggregator(**agg_kwargs)
 
     report = await aggregator.aggregate(summaries)
     output_dir = Path(args.output)
@@ -124,10 +153,16 @@ async def _cmd_aggregate(args: argparse.Namespace) -> None:
 
 
 async def _cmd_run(args: argparse.Namespace) -> None:
+    model_kwargs = {}
+    if args.model:
+        model_kwargs["summarizer_model"] = args.model
+        model_kwargs["aggregator_model"] = args.model
     pipeline = AgentLensPipeline(
         traces_dir=args.traces_dir,
         reports_dir=args.output,
         use_mock=args.mock,
+        aws_region=args.aws_region,
+        **model_kwargs,
     )
     report = await pipeline.run(max_concurrent=args.max_concurrency)
     print(f"Pipeline complete. Report: {args.output}/{report.report_id}.json")
