@@ -46,7 +46,6 @@
         },
         "output_summary": {
           "description": "Truncated summary of the output",
-          "maxLength": 500,
           "title": "Output Summary",
           "type": "string"
         },

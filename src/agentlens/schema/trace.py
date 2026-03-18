@@ -13,13 +13,14 @@ from agentlens.schema.enums import (
     SessionOutcome,
     TaskCategory,
 )
+from agentlens.schema.validators import is_valid_hash
 from agentlens.utils.hashing import hash_content, hash_input
 
 
 class ActionRecord(BaseModel):
     """A single action taken by an agent during a session."""
 
-    action_id: str = Field(..., description="Unique identifier for this action")
+    action_id: str = Field(..., min_length=1, description="Unique identifier for this action")
     action_type: ActionType
     autonomy_level: AutonomyLevel
     outcome: ActionOutcome
@@ -33,8 +34,11 @@ class ActionRecord(BaseModel):
     @field_validator("input_hash")
     @classmethod
     def validate_input_hash(cls, v: str) -> str:
-        if not v.startswith(("xxh64:", "sha256:")):
-            raise ValueError("input_hash must start with 'xxh64:' or 'sha256:'")
+        if not is_valid_hash(v):
+            raise ValueError(
+                "input_hash must match format '<method>:<hex>' "
+                "where method is 'xxh64' or 'sha256'"
+            )
         return v
 
     @field_validator("output_summary")
@@ -65,8 +69,8 @@ class EscalationEvent(BaseModel):
 class SessionTrace(BaseModel):
     """Complete trace of an agent session."""
 
-    session_id: str = Field(..., description="Unique session identifier")
-    agent_id: str = Field(..., description="Identifier for the agent")
+    session_id: str = Field(..., min_length=1, description="Unique session identifier")
+    agent_id: str = Field(..., min_length=1, description="Identifier for the agent")
     task_category: TaskCategory
     session_outcome: SessionOutcome
     start_time: datetime
