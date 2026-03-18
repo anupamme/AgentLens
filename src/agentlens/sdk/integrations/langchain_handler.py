@@ -45,7 +45,9 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         self._session_started = False
         self._session_ended = False
         self._current_llm_run: dict[str, int] = {}  # run_id -> start_time_ns
+        self._llm_prompts: dict[str, str] = {}  # run_id -> joined prompts
         self._current_tool_run: dict[str, int] = {}
+        self._tool_inputs: dict[str, str] = {}  # run_id -> input_str
         self._had_error = False
 
     def _ensure_session(self) -> None:
@@ -86,6 +88,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         self._ensure_session()
         run_id = str(kwargs.get("run_id", uuid4()))
         self._current_llm_run[run_id] = time.monotonic_ns()
+        self._llm_prompts[run_id] = "\n".join(prompts)
 
     def on_llm_end(self, response: Any, **kwargs: Any) -> None:
         import time
@@ -93,6 +96,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         run_id = str(kwargs.get("run_id", ""))
         start_ns = self._current_llm_run.pop(run_id, time.monotonic_ns())
         duration_ms = max(int((time.monotonic_ns() - start_ns) // 1_000_000), 0)
+        raw_input = self._llm_prompts.pop(run_id, f"llm_call_{run_id}")
 
         output_text = ""
         if hasattr(response, "generations") and response.generations:
@@ -104,7 +108,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
             action_type=ActionType.REASON,
             autonomy_level=AutonomyLevel.FULL_AUTO,
             outcome=ActionOutcome.SUCCESS,
-            raw_input=f"llm_call_{run_id}",
+            raw_input=raw_input,
             output_summary=output_text or "llm response",
             duration_ms=duration_ms,
         )
@@ -116,12 +120,13 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         run_id = str(kwargs.get("run_id", ""))
         start_ns = self._current_llm_run.pop(run_id, time.monotonic_ns())
         duration_ms = max(int((time.monotonic_ns() - start_ns) // 1_000_000), 0)
+        raw_input = self._llm_prompts.pop(run_id, f"llm_call_{run_id}")
 
         self._tracer.record_action(
             action_type=ActionType.REASON,
             autonomy_level=AutonomyLevel.FULL_AUTO,
             outcome=ActionOutcome.FAILURE,
-            raw_input=f"llm_call_{run_id}",
+            raw_input=raw_input,
             output_summary=f"error: {type(error).__name__}",
             duration_ms=duration_ms,
             metadata={"error_type": type(error).__name__},
@@ -137,6 +142,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         self._ensure_session()
         run_id = str(kwargs.get("run_id", uuid4()))
         self._current_tool_run[run_id] = time.monotonic_ns()
+        self._tool_inputs[run_id] = input_str
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         import time
@@ -144,6 +150,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         run_id = str(kwargs.get("run_id", ""))
         start_ns = self._current_tool_run.pop(run_id, time.monotonic_ns())
         duration_ms = max(int((time.monotonic_ns() - start_ns) // 1_000_000), 0)
+        raw_input = self._tool_inputs.pop(run_id, f"tool_call_{run_id}")
 
         tool_name = kwargs.get("name", "unknown_tool")
 
@@ -151,7 +158,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
             action_type=ActionType.EXECUTE,
             autonomy_level=AutonomyLevel.FULL_AUTO,
             outcome=ActionOutcome.SUCCESS,
-            raw_input=f"tool_call_{run_id}",
+            raw_input=raw_input,
             output_summary=str(output)[:500],
             duration_ms=duration_ms,
             tool_name=str(tool_name),
@@ -164,6 +171,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
         run_id = str(kwargs.get("run_id", ""))
         start_ns = self._current_tool_run.pop(run_id, time.monotonic_ns())
         duration_ms = max(int((time.monotonic_ns() - start_ns) // 1_000_000), 0)
+        raw_input = self._tool_inputs.pop(run_id, f"tool_call_{run_id}")
 
         tool_name = kwargs.get("name", "unknown_tool")
 
@@ -171,7 +179,7 @@ class AgentLensCallbackHandler(BaseCallbackHandler):
             action_type=ActionType.EXECUTE,
             autonomy_level=AutonomyLevel.FULL_AUTO,
             outcome=ActionOutcome.FAILURE,
-            raw_input=f"tool_call_{run_id}",
+            raw_input=raw_input,
             output_summary=f"error: {type(error).__name__}",
             duration_ms=duration_ms,
             tool_name=str(tool_name),
