@@ -127,10 +127,17 @@ async def _cmd_aggregate(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     summaries = []
+    skipped = 0
     for p in summaries_dir.glob("*.json"):
         text = p.read_text().strip()
         if text:
-            summaries.append(SessionSummary.from_json(text))
+            try:
+                summaries.append(SessionSummary.from_json(text))
+            except Exception as exc:
+                print(f"Warning: skipping {p.name}: {exc}", file=sys.stderr)
+                skipped += 1
+    if skipped:
+        print(f"Skipped {skipped} invalid summary file(s)", file=sys.stderr)
 
     if not summaries:
         print(f"No summaries found in {args.summaries_dir}", file=sys.stderr)

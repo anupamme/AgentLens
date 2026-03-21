@@ -217,7 +217,16 @@ class SessionSummarizer(BaseSummarizer):
         self.model = model
 
     async def summarize(self, trace: SessionTrace) -> SessionSummary:
-        """Summarize a single session trace into a privacy-safe summary."""
+        """Summarize a single session trace into a privacy-safe summary.
+
+        All numerical/statistical fields are computed deterministically from the
+        trace. The LLM is only used to generate task_abstract and
+        action_sequence_summary (the two fields requiring natural language).
+        """
+        import json as _json
+
+        fields = _compute_base_fields(trace)
+
         response = await self.client.messages.create(
             model=self.model,
             max_tokens=2000,
@@ -231,9 +240,19 @@ class SessionSummarizer(BaseSummarizer):
         )
         raw_text = _strip_markdown_fences(response.content[0].text)
         try:
-            return SessionSummary.model_validate_json(raw_text)
-        except Exception as exc:
+            llm_output = _json.loads(raw_text)
+        except _json.JSONDecodeError as exc:
             raise ValueError(
-                f"Failed to parse LLM summary for session {trace.session_id}: {exc}\n"
+                f"Failed to parse LLM JSON for session {trace.session_id}: {exc}\n"
                 f"Raw LLM output:\n{response.content[0].text[:500]}"
             ) from exc
+
+        # Use LLM-generated text fields, fall back to deterministic values
+        fields["task_abstract"] = llm_output.get(
+            "task_abstract", fields.get("task_abstract", "")
+        )
+        fields["action_sequence_summary"] = llm_output.get(
+            "action_sequence_summary", fields["action_sequence_summary"]
+        )
+
+        return SessionSummary(**fields)
