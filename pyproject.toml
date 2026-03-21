@@ -23,6 +23,7 @@ dev = [
     "mypy>=1.0",
 ]
 aggregation = ["anthropic>=0.40.0"]
+privacy = ["matplotlib>=3.5.0", "anthropic>=0.40.0"]
 langchain = ["langchain-core>=0.1.0"]
 examples = ["anthropic[bedrock]>=0.40.0"]
 
