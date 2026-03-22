@@ -70,6 +70,21 @@ class MockAdversary(BaseAdversary):
 class LLMAdversary(BaseAdversary):
     """LLM-powered adversary that tries to identify target sessions."""
 
+    # Key fields to include in the compact candidate representation
+    _CANDIDATE_FIELDS = (
+        "session_id", "agent_type", "task_category", "task_abstract",
+        "total_actions", "tools_used", "session_outcome",
+    )
+
+    # Key fields to include in the compact report representation
+    _REPORT_FIELDS = (
+        "session_count", "task_category_distribution", "agent_type_distribution",
+        "tool_usage_ranking", "outcome_distribution", "executive_summary",
+        "key_findings", "concerns",
+    )
+
+    MAX_CANDIDATES = 50
+
     def __init__(self, api_key: str, model: str = "claude-haiku-4-5-20251001") -> None:
         try:
             import anthropic
@@ -81,6 +96,16 @@ class LLMAdversary(BaseAdversary):
         self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = model
 
+    def _compact_candidate(self, summary: SessionSummary) -> dict:
+        """Extract only the fields relevant for re-identification."""
+        full = summary.model_dump()
+        return {k: full[k] for k in self._CANDIDATE_FIELDS if k in full}
+
+    def _compact_report(self, report: AggregateReport) -> dict:
+        """Extract only the fields relevant for re-identification."""
+        full = report.model_dump()
+        return {k: full[k] for k in self._REPORT_FIELDS if k in full}
+
     async def attack(
         self,
         candidate_summaries: list[SessionSummary],
@@ -89,11 +114,18 @@ class LLMAdversary(BaseAdversary):
     ) -> list[dict]:
         import json
 
+        # Sample candidates if the list is too large
+        candidates = candidate_summaries
+        all_ids = [s.session_id for s in candidate_summaries]
+        if len(candidates) > self.MAX_CANDIDATES:
+            rng = random.Random(0)
+            candidates = rng.sample(candidate_summaries, self.MAX_CANDIDATES)
+
         candidates_json = json.dumps(
-            [{"session_id": s.session_id, "summary": s.model_dump()} for s in candidate_summaries],
+            [self._compact_candidate(s) for s in candidates],
             indent=2, default=str,
         )
-        report_json = report.to_json()
+        report_json = json.dumps(self._compact_report(report), indent=2, default=str)
 
         prompt = (
             f"You are a privacy auditor testing whether an aggregate report leaks information "
@@ -102,7 +134,8 @@ class LLMAdversary(BaseAdversary):
             f"(mixed with decoy sessions). Your goal is to identify which of the candidate "
             f"sessions were part of the target batch that generated the report.\n\n"
             f"Aggregate Report:\n{report_json}\n\n"
-            f"Candidate Sessions:\n{candidates_json}\n\n"
+            f"Candidate Sessions ({len(candidates)} of {len(all_ids)} total):\n"
+            f"{candidates_json}\n\n"
             f"Respond with ONLY a JSON array of objects, each with 'session_id' (string) "
             f"and 'confidence' (float 0-1) for sessions you believe were targets. "
             f"Only include sessions where confidence > 0.5."
@@ -120,10 +153,13 @@ class LLMAdversary(BaseAdversary):
             if raw.startswith("```"):
                 raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
             guesses = json.loads(raw)
+            # Only return guesses for valid candidate session IDs
+            valid_ids = set(all_ids)
             return [
                 {"session_id": g["session_id"], "confidence": float(g["confidence"])}
                 for g in guesses
                 if isinstance(g, dict) and "session_id" in g
+                and g["session_id"] in valid_ids
             ]
         except (json.JSONDecodeError, KeyError):
             return []
