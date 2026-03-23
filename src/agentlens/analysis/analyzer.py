@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from pydantic import ValidationError
 
 from agentlens.aggregation.models import SessionSummary
 from agentlens.analysis.autonomy import analyze_autonomy
@@ -34,18 +37,27 @@ class AgentAnalyzer:
             if text:
                 try:
                     summaries.append(SessionSummary.from_json(text))
-                except Exception:
-                    pass
+                except json.JSONDecodeError as exc:
+                    print(f"Warning: {p}: invalid JSON: {exc}", file=sys.stderr)
+                except ValidationError as exc:
+                    print(f"Warning: {p}: schema validation failed: {exc}", file=sys.stderr)
 
         # Load .jsonl files (one summary per line)
         for p in summaries_dir.glob("*.jsonl"):
-            for line in p.read_text().splitlines():
+            for lineno, line in enumerate(p.read_text().splitlines(), start=1):
                 line = line.strip()
                 if line:
                     try:
                         summaries.append(SessionSummary.from_json(line))
-                    except Exception:
-                        pass
+                    except json.JSONDecodeError as exc:
+                        print(
+                            f"Warning: {p}:{lineno}: invalid JSON: {exc}", file=sys.stderr
+                        )
+                    except ValidationError as exc:
+                        print(
+                            f"Warning: {p}:{lineno}: schema validation failed: {exc}",
+                            file=sys.stderr,
+                        )
 
         return summaries
 
