@@ -148,8 +148,12 @@ class LLMAdversary(BaseAdversary):
             messages=[{"role": "user", "content": prompt}],
         )
 
+        import anthropic as _anthropic
+        _first_block = response.content[0]
+        if not isinstance(_first_block, _anthropic.types.TextBlock):
+            return []
         try:
-            raw = response.content[0].text.strip()
+            raw = _first_block.text.strip()
             # Strip markdown fences if present
             if raw.startswith("```"):
                 raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()

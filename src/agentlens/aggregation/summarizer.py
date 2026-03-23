@@ -226,10 +226,14 @@ class SessionSummarizer(BaseSummarizer):
                 "The 'anthropic' package is required for SessionSummarizer. "
                 "Install it with: pip install agentlens[aggregation]"
             ) from e
+        _client: (
+            anthropic.AsyncAnthropicBedrock | anthropic.AsyncAnthropic
+        )
         if aws_region:
-            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            _client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
         else:
-            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            _client = anthropic.AsyncAnthropic(api_key=api_key)
+        self.client = _client
         self.model = model
 
     async def summarize(self, trace: SessionTrace) -> SessionSummary:
@@ -282,13 +286,20 @@ class SessionSummarizer(BaseSummarizer):
                         await asyncio.sleep(delay)
                         continue
                 raise
-        raw_text = _strip_markdown_fences(response.content[0].text)
+        import anthropic as _anthropic
+        _first_block = response.content[0]
+        if not isinstance(_first_block, _anthropic.types.TextBlock):
+            raise ValueError(
+                f"Unexpected LLM response block type for session "
+                f"{trace.session_id}: {type(_first_block).__name__}"
+            )
+        raw_text = _strip_markdown_fences(_first_block.text)
         try:
             llm_output = _json.loads(raw_text)
         except _json.JSONDecodeError as exc:
             raise ValueError(
                 f"Failed to parse LLM JSON for session {trace.session_id}: {exc}\n"
-                f"Raw LLM output:\n{response.content[0].text[:500]}"
+                f"Raw LLM output:\n{_first_block.text[:500]}"
             ) from exc
 
         # Use LLM-generated text fields, fall back to deterministic values

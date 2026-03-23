@@ -302,10 +302,14 @@ class SessionAggregator(BaseAggregator):
                 "The 'anthropic' package is required for SessionAggregator. "
                 "Install it with: pip install agentlens[aggregation]"
             ) from e
+        _client: (
+            anthropic.AsyncAnthropicBedrock | anthropic.AsyncAnthropic
+        )
         if aws_region:
-            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            _client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
         else:
-            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            _client = anthropic.AsyncAnthropic(api_key=api_key)
+        self.client = _client
         self.model = model
 
     async def aggregate(self, summaries: list[SessionSummary]) -> AggregateReport:
@@ -377,7 +381,13 @@ class SessionAggregator(BaseAggregator):
                         await asyncio.sleep(delay)
                         continue
                 raise
-        raw_text = _strip_markdown_fences(response.content[0].text)
+        import anthropic as _anthropic
+        _first_block = response.content[0]
+        if not isinstance(_first_block, _anthropic.types.TextBlock):
+            raise ValueError(
+                f"Unexpected LLM response block type: {type(_first_block).__name__}"
+            )
+        raw_text = _strip_markdown_fences(_first_block.text)
         try:
             parsed = json.loads(raw_text)
             return {
@@ -388,5 +398,5 @@ class SessionAggregator(BaseAggregator):
         except (json.JSONDecodeError, KeyError) as exc:
             raise ValueError(
                 f"Failed to parse LLM narrative response: {exc}\n"
-                f"Raw LLM output:\n{response.content[0].text[:500]}"
+                f"Raw LLM output:\n{_first_block.text[:500]}"
             ) from exc
