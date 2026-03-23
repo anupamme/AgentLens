@@ -51,6 +51,8 @@ def _build_parser() -> argparse.ArgumentParser:
     sp_gen.add_argument("--output", default="./workloads", help="Output directory")
     sp_gen.add_argument("--mock", action="store_true", help="Use mock generator (no LLM)")
     sp_gen.add_argument("--seed", type=int, default=None, help="Random seed for mock generator")
+    sp_gen.add_argument("--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)")
+    sp_gen.add_argument("--model", default=None, help="Model ID (e.g. us.anthropic.claude-sonnet-4-20250514-v1:0 for Bedrock)")
 
     # --- run ---
     sp_run = subparsers.add_parser(
@@ -79,6 +81,8 @@ def _build_parser() -> argparse.ArgumentParser:
     sp_camp.add_argument("--mock", action="store_true", help="Use mock generator (no LLM)")
     sp_camp.add_argument("--max-concurrent", type=int, default=3, help="Max concurrent tasks")
     sp_camp.add_argument("--seed", type=int, default=None, help="Random seed for mock generator")
+    sp_camp.add_argument("--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)")
+    sp_camp.add_argument("--model", default=None, help="Model ID (e.g. us.anthropic.claude-sonnet-4-20250514-v1:0 for Bedrock)")
 
     return parser
 
@@ -89,7 +93,12 @@ async def _cmd_generate(args: argparse.Namespace) -> None:
         tasks = gen.generate(agent_type=args.agent_type, count=args.count)
     else:
         from agentlens.workloads.generator import WorkloadGenerator
-        gen = WorkloadGenerator()
+        gen_kwargs: dict = {}
+        if args.aws_region:
+            gen_kwargs["aws_region"] = args.aws_region
+        if args.model:
+            gen_kwargs["model"] = args.model
+        gen = WorkloadGenerator(**gen_kwargs)
         tasks = await gen.generate(agent_type=args.agent_type, count=args.count)
 
     output_dir = Path(args.output)
@@ -178,7 +187,12 @@ async def _cmd_campaign(args: argparse.Namespace) -> None:
             tasks = gen.generate(agent_type=agent_type, count=count)
         else:
             from agentlens.workloads.generator import WorkloadGenerator
-            llm_gen = WorkloadGenerator()
+            gen_kwargs: dict = {}
+            if args.aws_region:
+                gen_kwargs["aws_region"] = args.aws_region
+            if args.model:
+                gen_kwargs["model"] = args.model
+            llm_gen = WorkloadGenerator(**gen_kwargs)
             tasks = await llm_gen.generate(agent_type=agent_type, count=count)
         all_workloads[agent_type] = tasks
         print(f"  {agent_type}: {len(tasks)} tasks")

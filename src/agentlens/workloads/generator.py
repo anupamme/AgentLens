@@ -143,9 +143,7 @@ class WorkloadGenerator:
                 "Install it with: pip install agentlens[workloads]"
             ) from e
         if aws_region:
-            self.client = anthropic.AsyncAnthropic(
-                base_url=f"https://bedrock-runtime.{aws_region}.amazonaws.com",
-            )
+            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
         else:
             self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = model
