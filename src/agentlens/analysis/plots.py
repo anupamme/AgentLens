@@ -552,10 +552,13 @@ def plot_oversight_gap_heatmap(result: OversightGapAnalysis, output_path: str | 
     agents = sorted(result.by_agent.keys())
     tasks = sorted(result.by_task_category.keys())
 
-    # Build a simple matrix using available means (agent mean for all tasks as default)
+    # Build matrix from per-(agent, task) means; fall back to the agent's overall
+    # mean for combinations not observed in the data.
     data = []
     for agent in agents:
-        row = [result.by_agent.get(agent, 0.0)] * len(tasks)
+        agent_task_scores = result.by_agent_by_task.get(agent, {})
+        agent_fallback = result.by_agent.get(agent, 0.0)
+        row = [agent_task_scores.get(task, agent_fallback) for task in tasks]
         data.append(row)
     data_arr = np.array(data)
 

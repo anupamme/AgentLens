@@ -48,6 +48,19 @@ def analyze_oversight_gap(summaries: list[SessionSummary]) -> OversightGapAnalys
         task: round(statistics.mean(vals), 4) for task, vals in sorted(by_task.items())
     }
 
+    # By agent × task category combination
+    by_agent_task: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for s in summaries:
+        by_agent_task[s.agent_type][s.task_category.value].append(s.oversight_gap_score)
+
+    agent_task_means: dict[str, dict[str, float]] = {
+        agent: {
+            task: round(statistics.mean(vals), 4)
+            for task, vals in sorted(task_scores.items())
+        }
+        for agent, task_scores in sorted(by_agent_task.items())
+    }
+
     # Risk tiers
     low = sum(1 for sc in scores if _risk_tier(sc) == "low")
     medium = sum(1 for sc in scores if _risk_tier(sc) == "medium")
@@ -91,6 +104,7 @@ def analyze_oversight_gap(summaries: list[SessionSummary]) -> OversightGapAnalys
         score_histogram=scores,
         by_agent=agent_means,
         by_task_category=task_means,
+        by_agent_by_task=agent_task_means,
         low_risk_count=low,
         medium_risk_count=medium,
         high_risk_count=high,

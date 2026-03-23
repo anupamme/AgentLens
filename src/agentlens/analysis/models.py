@@ -118,6 +118,7 @@ class OversightGapAnalysis(BaseModel):
     score_histogram: list[float] = Field(default_factory=list)
     by_agent: dict[str, float] = Field(default_factory=dict)
     by_task_category: dict[str, float] = Field(default_factory=dict)
+    by_agent_by_task: dict[str, dict[str, float]] = Field(default_factory=dict)
     low_risk_count: int = 0
     medium_risk_count: int = 0
     high_risk_count: int = 0
