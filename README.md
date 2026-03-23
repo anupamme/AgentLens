@@ -95,7 +95,7 @@ The framework has three layers:
 
 ## Dataset
 
-Our trace dataset is available on HuggingFace: [AgentLens Dataset](https://huggingface.co/datasets/anupamme/agentlens-traces)
+Our trace dataset is available locally in hf_dataset/.
 
 ## Results
 
