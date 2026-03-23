@@ -144,8 +144,9 @@ class BaseSummarizer(ABC):
         between each. For higher concurrency, traces are processed in
         chunks of max_concurrent with a pause between chunks.
         """
+        total = len(traces)
         results: list[SessionSummary] = []
-        for i in range(0, len(traces), max_concurrent):
+        for i in range(0, total, max_concurrent):
             chunk = traces[i : i + max_concurrent]
             if len(chunk) == 1:
                 results.append(await self.summarize(chunk[0]))
@@ -154,7 +155,9 @@ class BaseSummarizer(ABC):
                     *[self.summarize(t) for t in chunk]
                 )
                 results.extend(chunk_results)
-            if i + max_concurrent < len(traces):
+            done = min(i + max_concurrent, total)
+            print(f"  Summarized {done}/{total} traces", file=sys.stderr)
+            if done < total:
                 await asyncio.sleep(1.0)
         return results
 
@@ -244,18 +247,29 @@ class SessionSummarizer(BaseSummarizer):
         max_retries = 6
         for attempt in range(max_retries + 1):
             try:
-                response = await self.client.messages.create(
-                    model=self.model,
-                    max_tokens=2000,
-                    system=self.SYSTEM_PROMPT,
-                    messages=[{
-                        "role": "user",
-                        "content": self.USER_PROMPT_TEMPLATE.format(
-                            trace_json=trace.to_json()
-                        ),
-                    }],
+                response = await asyncio.wait_for(
+                    self.client.messages.create(
+                        model=self.model,
+                        max_tokens=2000,
+                        system=self.SYSTEM_PROMPT,
+                        messages=[{
+                            "role": "user",
+                            "content": self.USER_PROMPT_TEMPLATE.format(
+                                trace_json=trace.to_json()
+                            ),
+                        }],
+                    ),
+                    timeout=120,
                 )
                 break
+            except asyncio.TimeoutError:
+                if attempt < max_retries:
+                    print(
+                        f"API call timed out (attempt {attempt + 1}/{max_retries + 1}), retrying...",
+                        file=sys.stderr,
+                    )
+                    continue
+                raise
             except Exception as exc:
                 if "429" in str(exc) or "rate" in str(exc).lower():
                     if attempt < max_retries:
