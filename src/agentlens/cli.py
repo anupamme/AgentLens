@@ -42,7 +42,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Use MockSummarizer (no API calls)"
     )
     sp_summarize.add_argument(
-        "--max-concurrency", type=int, default=5, help="Max concurrent API calls"
+        "--max-concurrency", type=int, default=1, help="Max concurrent API calls (use 1 for Bedrock)"
     )
     sp_summarize.add_argument(
         "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
@@ -88,7 +88,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Use mock components (no API calls)"
     )
     sp_run.add_argument(
-        "--max-concurrency", type=int, default=5, help="Max concurrent API calls"
+        "--max-concurrency", type=int, default=1, help="Max concurrent API calls (use 1 for Bedrock)"
     )
     sp_run.add_argument(
         "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"

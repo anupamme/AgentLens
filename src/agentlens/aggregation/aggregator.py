@@ -10,7 +10,10 @@ Usage:
 
 from __future__ import annotations
 
+import asyncio
+import random
 import statistics
+import sys
 from abc import ABC, abstractmethod
 from collections import Counter
 from datetime import datetime, timezone
@@ -326,7 +329,6 @@ class SessionAggregator(BaseAggregator):
             }, indent=2, default=str)
         else:
             # Include stats + random sample of 20 summaries
-            import random
             sample = random.sample(summaries, min(20, len(summaries)))
             summary_data = [s.model_dump() for s in sample]
             context = json.dumps({
@@ -335,15 +337,31 @@ class SessionAggregator(BaseAggregator):
                 "note": f"Showing 20 of {len(summaries)} sessions",
             }, indent=2, default=str)
 
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=2000,
-            system=self.NARRATIVE_SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"Generate a narrative report for this data:\n\n{context}",
-            }],
-        )
+        max_retries = 6
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self.client.messages.create(
+                    model=self.model,
+                    max_tokens=2000,
+                    system=self.NARRATIVE_SYSTEM_PROMPT,
+                    messages=[{
+                        "role": "user",
+                        "content": f"Generate a narrative report for this data:\n\n{context}",
+                    }],
+                )
+                break
+            except Exception as exc:
+                if "429" in str(exc) or "rate" in str(exc).lower():
+                    if attempt < max_retries:
+                        delay = min(2 ** attempt, 30) + random.uniform(0, 2)
+                        print(
+                            f"Rate limited on aggregate (attempt {attempt + 1}/{max_retries + 1}), "
+                            f"retrying in {delay:.1f}s...",
+                            file=sys.stderr,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                raise
         raw_text = _strip_markdown_fences(response.content[0].text)
         try:
             parsed = json.loads(raw_text)

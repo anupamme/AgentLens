@@ -6,13 +6,15 @@ generation of task configurations for driving simulated agents.
 
 from __future__ import annotations
 
+import asyncio
 import json as _json
 import random
 import re
+import sys
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from agentlens.schema.enums import TaskCategory
 
@@ -166,9 +168,11 @@ class WorkloadGenerator:
         tasks: list[TaskConfig] = []
         batch_size = 20
 
-        for batch_start in range(0, count, batch_size):
+        for i, batch_start in enumerate(range(0, count, batch_size)):
+            if i > 0:
+                await asyncio.sleep(1.0)  # pace between batches
             batch_count = min(batch_size, count - batch_start)
-            batch_tasks = await self._generate_batch(agent_type, batch_count)
+            batch_tasks = await self._generate_batch(agent_type, batch_count, batch_start)
             tasks.extend(batch_tasks)
 
         # Apply difficulty distribution
@@ -188,17 +192,34 @@ class WorkloadGenerator:
 
         return tasks[:count]
 
-    async def _generate_batch(self, agent_type: str, count: int) -> list[TaskConfig]:
-        """Generate a single batch of tasks via LLM."""
+    async def _generate_batch(
+        self, agent_type: str, count: int, batch_start: int = 0, max_retries: int = 6,
+    ) -> list[TaskConfig]:
+        """Generate a single batch of tasks via LLM with retry on rate limits."""
         instructions = AGENT_INSTRUCTIONS.get(agent_type, "Generate diverse, realistic tasks.")
         prompt = GENERATION_PROMPT.format(agent_type=agent_type, count=count)
         prompt += f"\n\nAdditional instructions: {instructions}"
 
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self.client.messages.create(
+                    model=self.model,
+                    max_tokens=4000,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                break
+            except Exception as exc:
+                if "429" in str(exc) or "rate" in str(exc).lower():
+                    if attempt < max_retries:
+                        delay = min(2 ** attempt, 30) + random.uniform(0, 2)
+                        print(
+                            f"Rate limited (attempt {attempt + 1}/{max_retries + 1}), "
+                            f"retrying in {delay:.1f}s...",
+                            file=sys.stderr,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                raise
 
         raw = _strip_json_fences(response.content[0].text)
         try:
@@ -210,7 +231,7 @@ class WorkloadGenerator:
         for item in items:
             try:
                 task = TaskConfig(
-                    task_id=item.get("task_id", f"{agent_type}_{len(tasks)}"),
+                    task_id=item.get("task_id", f"{agent_type}_{batch_start + len(tasks)}"),
                     agent_type=agent_type,
                     prompt=item.get("prompt", ""),
                     difficulty=Difficulty(item.get("difficulty", "medium")),
@@ -219,7 +240,11 @@ class WorkloadGenerator:
                     metadata=item.get("metadata", {}),
                 )
                 tasks.append(task)
-            except Exception:
+            except (ValueError, ValidationError) as exc:
+                print(
+                    f"Warning: skipping malformed task item: {exc}",
+                    file=sys.stderr,
+                )
                 continue
 
         return tasks
