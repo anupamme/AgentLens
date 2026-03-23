@@ -355,8 +355,9 @@ class SessionAggregator(BaseAggregator):
                 break
             except asyncio.TimeoutError:
                 if attempt < max_retries:
+                    attempt_info = f"{attempt + 1}/{max_retries + 1}"
                     print(
-                        f"API call timed out (attempt {attempt + 1}/{max_retries + 1}), retrying...",
+                        f"API call timed out (attempt {attempt_info}), retrying...",
                         file=sys.stderr,
                     )
                     continue

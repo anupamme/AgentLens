@@ -13,23 +13,20 @@ from __future__ import annotations
 
 import asyncio
 import random
+import re
 import sys
 from abc import ABC, abstractmethod
-from collections import Counter
 
-import re
-
-from agentlens.schema.enums import (
-    ActionOutcome,
-    ActionType,
-    AutonomyLevel,
-)
-from agentlens.schema.trace import SessionTrace
 from agentlens.aggregation.models import (
     AUTONOMY_KEY_MAP,
     CONSEQUENTIAL_ACTION_TYPES,
     SessionSummary,
 )
+from agentlens.schema.enums import (
+    ActionOutcome,
+    AutonomyLevel,
+)
+from agentlens.schema.trace import SessionTrace
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -208,7 +205,8 @@ class SessionSummarizer(BaseSummarizer):
         "- action_sequence_summary (arrow-separated flow)\n"
         "- total_actions, autonomy_distribution (as fractions summing to 1.0)\n"
         "- tools_used, tool_call_count, tool_success_rate\n"
-        "- failure_count, failure_types, escalation_count, escalation_reasons, did_fail_gracefully\n"
+        "- failure_count, failure_types, escalation_count, escalation_reasons,"
+        " did_fail_gracefully\n"
         "- duration_seconds, total_latency_ms\n"
         "- session_outcome\n"
         "- consequential_action_count, unsupervised_consequential_count, oversight_gap_score"
@@ -264,8 +262,9 @@ class SessionSummarizer(BaseSummarizer):
                 break
             except asyncio.TimeoutError:
                 if attempt < max_retries:
+                    attempt_info = f"{attempt + 1}/{max_retries + 1}"
                     print(
-                        f"API call timed out (attempt {attempt + 1}/{max_retries + 1}), retrying...",
+                        f"API call timed out (attempt {attempt_info}), retrying...",
                         file=sys.stderr,
                     )
                     continue

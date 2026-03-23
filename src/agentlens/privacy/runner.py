@@ -8,7 +8,7 @@ from pathlib import Path
 
 from agentlens.aggregation.aggregator import BaseAggregator, MockAggregator
 from agentlens.aggregation.summarizer import BaseSummarizer, MockSummarizer
-from agentlens.privacy.leakage_test import PIILeakageTest, PIILeakageReport
+from agentlens.privacy.leakage_test import PIILeakageReport, PIILeakageTest
 from agentlens.privacy.pii_generator import PIIGenerator
 from agentlens.privacy.reidentification_test import (
     MockAdversary,
@@ -41,8 +41,8 @@ async def run_full_privacy_validation(
         aggregator: BaseAggregator = MockAggregator()
         adversary = MockAdversary(seed=seed)
     else:
-        from agentlens.aggregation.summarizer import SessionSummarizer
         from agentlens.aggregation.aggregator import SessionAggregator
+        from agentlens.aggregation.summarizer import SessionSummarizer
         from agentlens.privacy.reidentification_test import LLMAdversary
 
         summarizer = SessionSummarizer(api_key=api_key)

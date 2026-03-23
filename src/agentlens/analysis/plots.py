@@ -70,8 +70,16 @@ def plot_autonomy_histogram(result: AutonomyAnalysis, output_path: str | Path) -
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.hist(result.autonomy_ratio_histogram, bins=20, color=COLORS[0], alpha=0.7, edgecolor="white")
-    ax.axvline(result.mean, color=COLORS[1], linestyle="--", linewidth=2, label=f"Mean={result.mean:.3f}")
-    ax.axvline(result.median, color=COLORS[2], linestyle="-.", linewidth=2, label=f"Median={result.median:.3f}")
+    ax.axvline(
+        result.mean, color=COLORS[1], linestyle="--", linewidth=2, label=f"Mean={result.mean:.3f}"
+    )
+    ax.axvline(
+        result.median,
+        color=COLORS[2],
+        linestyle="-.",
+        linewidth=2,
+        label=f"Median={result.median:.3f}",
+    )
 
     ax.set_xlabel("Fully Autonomous Ratio", fontsize=12)
     ax.set_ylabel("Count", fontsize=12)
@@ -183,7 +191,7 @@ def plot_failure_by_autonomy(result: FailureAnalysis, output_path: str | Path) -
 
     fig, ax = plt.subplots(figsize=(10, 6))
     levels = sorted(result.failure_rate_by_autonomy_level.keys())
-    rates = [result.failure_rate_by_autonomy_level[l] for l in levels]
+    rates = [result.failure_rate_by_autonomy_level[lvl] for lvl in levels]
 
     ax.bar(levels, rates, color=[COLORS[i % len(COLORS)] for i in range(len(levels))])
     ax.set_xlabel("Dominant Autonomy Level", fontsize=12)
@@ -384,7 +392,8 @@ def plot_escalation_reasons(result: EscalationAnalysis, output_path: str | Path)
 
 
 def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) -> None:
-    """2x2 matrix: appropriate escalation / false escalation / appropriate autonomy / missed escalation."""
+    """2x2 matrix: appropriate escalation / false escalation / appropriate autonomy /
+    missed escalation."""
     if not _check_matplotlib():
         return
     import matplotlib.pyplot as plt
@@ -398,10 +407,6 @@ def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) 
     appropriate_esc = 1.0 - false_esc if false_esc <= 1.0 else 0.0
     appropriate_auto = 1.0 - missed_esc if missed_esc <= 1.0 else 0.0
 
-    matrix = [
-        [appropriate_esc, false_esc],
-        [missed_esc, appropriate_auto],
-    ]
     labels_matrix = [
         [f"Appropriate\nEscalation\n{appropriate_esc:.0%}", f"False\nEscalation\n{false_esc:.0%}"],
         [f"Missed\nEscalation\n{missed_esc:.0%}", f"Appropriate\nAutonomy\n{appropriate_auto:.0%}"],

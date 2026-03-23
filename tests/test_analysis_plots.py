@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -12,11 +11,6 @@ from agentlens.aggregation.models import SessionSummary
 from agentlens.analysis.analyzer import AgentAnalyzer
 from agentlens.analysis.models import (
     AnalysisResults,
-    AutonomyAnalysis,
-    EscalationAnalysis,
-    FailureAnalysis,
-    OversightGapAnalysis,
-    ToolUsageAnalysis,
 )
 from agentlens.analysis.plots import (
     _check_matplotlib,

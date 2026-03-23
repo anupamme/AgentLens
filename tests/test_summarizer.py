@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 import pytest
 
+from agentlens.aggregation.models import SessionSummary
+from agentlens.aggregation.summarizer import MockSummarizer
 from agentlens.schema.enums import (
     ActionOutcome,
     ActionType,
@@ -13,8 +15,6 @@ from agentlens.schema.enums import (
     TaskCategory,
 )
 from agentlens.schema.trace import ActionRecord, EscalationEvent, SessionTrace
-from agentlens.aggregation.summarizer import MockSummarizer
-from agentlens.aggregation.models import SessionSummary
 from agentlens.utils.hashing import hash_input
 
 

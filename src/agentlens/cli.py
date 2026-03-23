@@ -11,14 +11,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import sys
 from pathlib import Path
 
+from agentlens.aggregation.aggregator import MockAggregator, SessionAggregator
 from agentlens.aggregation.models import SessionSummary
 from agentlens.aggregation.pipeline import AgentLensPipeline
-from agentlens.aggregation.summarizer import MockSummarizer, SessionSummarizer
-from agentlens.aggregation.aggregator import MockAggregator, SessionAggregator
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -42,14 +40,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Use MockSummarizer (no API calls)"
     )
     sp_summarize.add_argument(
-        "--max-concurrency", type=int, default=1, help="Max concurrent API calls (use 1 for Bedrock)"
+        "--max-concurrency", type=int, default=1,
+        help="Max concurrent API calls (use 1 for Bedrock)",
     )
     sp_summarize.add_argument(
         "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
     )
     sp_summarize.add_argument(
         "--model", default=None,
-        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
+        help="Model ID (e.g. claude-haiku-4-5-20251001 or Bedrock cross-region inference ID)",
     )
 
     # --- aggregate ---
@@ -71,7 +70,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sp_aggregate.add_argument(
         "--model", default=None,
-        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
+        help="Model ID (e.g. claude-haiku-4-5-20251001 or Bedrock cross-region inference ID)",
     )
 
     # --- run ---
@@ -88,14 +87,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Use mock components (no API calls)"
     )
     sp_run.add_argument(
-        "--max-concurrency", type=int, default=1, help="Max concurrent API calls (use 1 for Bedrock)"
+        "--max-concurrency", type=int, default=1,
+        help="Max concurrent API calls (use 1 for Bedrock)",
     )
     sp_run.add_argument(
         "--aws-region", default=None, help="AWS region for Bedrock (e.g. us-east-1)"
     )
     sp_run.add_argument(
         "--model", default=None,
-        help="Model ID to use (e.g. claude-haiku-4-5-20251001 or us.anthropic.claude-haiku-4-5-20251001-v1:0 for Bedrock)",
+        help="Model ID (e.g. claude-haiku-4-5-20251001 or Bedrock cross-region inference ID)",
     )
 
     # --- analyze ---

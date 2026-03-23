@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from agentlens.aggregation.models import SessionSummary
 from agentlens.aggregation.summarizer import BaseSummarizer, _compute_base_fields
 from agentlens.privacy.leakage_test import check_summary_for_pii
-from agentlens.privacy.pii_generator import PIIGenerator, SyntheticPII
+from agentlens.privacy.pii_generator import PIIGenerator
 from agentlens.privacy.trace_factory import make_diverse_traces
 from agentlens.schema.trace import SessionTrace
 
@@ -31,7 +31,10 @@ _LEVEL_ABSTRACTS = {
     2: "A {category} agent analyzed files and found issues.",
     3: "Agent performed {num_actions} actions on a {category} task",
     4: "Agent performed {num_actions} actions using {tools} on a {category} task",
-    5: "Agent performed {num_actions} actions using {tools} on a {category} task. Output: {output_snippet}",
+    5: (
+        "Agent performed {num_actions} actions using {tools} on a {category} task."
+        " Output: {output_snippet}"
+    ),
 }
 
 

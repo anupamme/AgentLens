@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import random
 import string
 from dataclasses import dataclass, fields
@@ -104,7 +103,11 @@ class PIIGenerator:
         cc_groups = [str(rng.randint(1000, 9999)) for _ in range(4)]
         credit_card = "-".join(cc_groups)
 
-        ip_address = f"{rng.randint(10, 223)}.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"
+        ip_parts = [
+            rng.randint(10, 223), rng.randint(0, 255),
+            rng.randint(0, 255), rng.randint(1, 254),
+        ]
+        ip_address = ".".join(str(p) for p in ip_parts)
 
         github_username = f"{first.lower()}{last.lower()}{rng.randint(1, 999)}"
 
@@ -119,7 +122,8 @@ class PIIGenerator:
 
         dirs = rng.choice(["/home", "/Users", "C:\\Users"])
         username = first.lower()
-        file_path = f"{dirs}/{username}/projects/{''.join(rng.choices(string.ascii_lowercase, k=8))}/config.env"
+        proj_name = "".join(rng.choices(string.ascii_lowercase, k=8))
+        file_path = f"{dirs}/{username}/projects/{proj_name}/config.env"
 
         aws_secret = "".join(rng.choices(string.ascii_letters + string.digits + "+/", k=40))
 

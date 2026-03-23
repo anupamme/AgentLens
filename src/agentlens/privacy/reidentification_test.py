@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from agentlens.aggregation.aggregator import BaseAggregator
 from agentlens.aggregation.models import AggregateReport, SessionSummary
@@ -205,7 +205,8 @@ class ReidentificationTest:
         fpr = false_positives / max(num_decoys, 1)
         precision = true_positives / max(len(guessed_ids), 1)
         recall = tpr
-        f1 = (2 * precision * recall / max(precision + recall, 1e-10)) if (precision + recall) > 0 else 0.0
+        denom = max(precision + recall, 1e-10)
+        f1 = (2 * precision * recall / denom) if (precision + recall) > 0 else 0.0
 
         confidences = [g["confidence"] for g in guesses] if guesses else [0.0]
         mean_confidence = sum(confidences) / len(confidences)

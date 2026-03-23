@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from agentlens.aggregation.models import AggregateReport
+from agentlens.aggregation.pipeline import AgentLensPipeline
 from agentlens.schema.enums import (
     ActionOutcome,
     ActionType,
@@ -13,8 +15,6 @@ from agentlens.schema.enums import (
     TaskCategory,
 )
 from agentlens.schema.trace import ActionRecord, SessionTrace
-from agentlens.aggregation.models import AggregateReport
-from agentlens.aggregation.pipeline import AgentLensPipeline
 from agentlens.utils.hashing import hash_input
 
 
@@ -105,7 +105,7 @@ class TestAgentLensPipeline:
             reports_dir=str(reports_dir),
             use_mock=True,
         )
-        report = await pipeline.run()
+        await pipeline.run()
 
         # Check summaries written
         summary_files = list(summaries_dir.glob("*.json"))

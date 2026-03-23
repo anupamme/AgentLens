@@ -1,7 +1,6 @@
 """Tests for TraceValidator."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from agentlens.schema.enums import (

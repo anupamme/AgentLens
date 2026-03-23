@@ -1,8 +1,9 @@
 """Tests for WorkloadRunner and SimulatedAgent."""
 
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
 
 from agentlens.schema.enums import ActionOutcome, SessionOutcome
 from agentlens.workloads.generator import Difficulty, FailureMode, TaskConfig
