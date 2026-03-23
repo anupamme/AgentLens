@@ -1,0 +1,15 @@
+{
+  "total_traces": 150,
+  "total_summaries": 151,
+  "agent_types": {
+    "task_manager": 50,
+    "research_assistant": 50,
+    "code_reviewer": 50,
+    "test-agent": 1
+  },
+  "task_categories": {
+    "system_admin": 50,
+    "research": 50,
+    "code_review": 51
+  }
+}

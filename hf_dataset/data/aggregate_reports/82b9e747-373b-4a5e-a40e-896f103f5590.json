@@ -1,0 +1,189 @@
+{
+  "report_id": "82b9e747-373b-4a5e-a40e-896f103f5590",
+  "generated_at": "2026-03-23T06:26:49.097904Z",
+  "session_count": 150,
+  "time_range": {
+    "start": "2026-03-23T05:15:34.995475+00:00",
+    "end": "2026-03-23T05:16:15.225882+00:00"
+  },
+  "task_category_distribution": {
+    "research": 50,
+    "code_review": 50,
+    "system_admin": 50
+  },
+  "agent_type_distribution": {
+    "research_assistant": 50,
+    "code_reviewer": 50,
+    "task_manager": 50
+  },
+  "mean_autonomous_action_ratio": 0.6091,
+  "autonomy_histogram": {
+    "auto_with_audit": 0.1795,
+    "fully_autonomous": 0.6091,
+    "human_confirmed": 0.1636,
+    "human_driven": 0.0478
+  },
+  "tool_usage_ranking": [
+    {
+      "tool": "analyze_findings",
+      "count": 50,
+      "success_rate": 0.845
+    },
+    {
+      "tool": "read_source",
+      "count": 50,
+      "success_rate": 0.845
+    },
+    {
+      "tool": "web_search",
+      "count": 50,
+      "success_rate": 0.845
+    },
+    {
+      "tool": "read_source_file",
+      "count": 50,
+      "success_rate": 0.7686
+    },
+    {
+      "tool": "search_patterns",
+      "count": 50,
+      "success_rate": 0.7686
+    },
+    {
+      "tool": "prioritize",
+      "count": 50,
+      "success_rate": 0.8667
+    },
+    {
+      "tool": "read_backlog",
+      "count": 50,
+      "success_rate": 0.8667
+    },
+    {
+      "tool": "find_dependencies",
+      "count": 46,
+      "success_rate": 0.8768
+    },
+    {
+      "tool": "analyze_code",
+      "count": 44,
+      "success_rate": 0.737
+    },
+    {
+      "tool": "deep_search",
+      "count": 40,
+      "success_rate": 0.8562
+    },
+    {
+      "tool": "plan_sprint",
+      "count": 38,
+      "success_rate": 0.8509
+    },
+    {
+      "tool": "read_tests",
+      "count": 33,
+      "success_rate": 0.7706
+    },
+    {
+      "tool": "read_additional",
+      "count": 30,
+      "success_rate": 0.9333
+    },
+    {
+      "tool": "update_board",
+      "count": 29,
+      "success_rate": 0.8736
+    },
+    {
+      "tool": "assess_coverage",
+      "count": 22,
+      "success_rate": 0.7468
+    },
+    {
+      "tool": "notify_team",
+      "count": 22,
+      "success_rate": 0.8333
+    },
+    {
+      "tool": "synthesize",
+      "count": 20,
+      "success_rate": 0.9
+    },
+    {
+      "tool": "write_review",
+      "count": 14,
+      "success_rate": 0.6735
+    },
+    {
+      "tool": "write_summary",
+      "count": 13,
+      "success_rate": 0.9231
+    },
+    {
+      "tool": "post_review",
+      "count": 7,
+      "success_rate": 0.6327
+    }
+  ],
+  "most_common_tool_sequences": [
+    "read_backlog → prioritize → find_dependencies → plan_sprint → update_board → notify_team",
+    "search → read → reason → search → read → reason → write",
+    "read_source_file → search_patterns → analyze_code",
+    "search → read → reason → search → read",
+    "search → read → reason → search",
+    "read_source_file → search_patterns → analyze_code → read_tests",
+    "read_backlog → prioritize → find_dependencies → plan_sprint",
+    "read_backlog → prioritize → find_dependencies",
+    "read_backlog → prioritize → find_dependencies → plan_sprint → update_board",
+    "search → read → reason → search → read → reason"
+  ],
+  "failure_rate_by_agent": {
+    "research_assistant": 0.1028,
+    "code_reviewer": 0.0909,
+    "task_manager": 0.0596
+  },
+  "failure_type_distribution": {
+    "unknown": 15
+  },
+  "graceful_failure_rate": 0.0,
+  "mean_escalation_rate": 0.0333,
+  "escalation_reason_distribution": {
+    "risk_high": 5
+  },
+  "mean_oversight_gap_score": 0.0867,
+  "oversight_gap_by_agent": {
+    "research_assistant": 0.0,
+    "code_reviewer": 0.0,
+    "task_manager": 0.26
+  },
+  "oversight_gap_by_task_category": {
+    "research": 0.0,
+    "code_review": 0.0,
+    "system_admin": 0.26
+  },
+  "high_risk_sessions": 7,
+  "mean_duration_seconds": 0.46,
+  "mean_actions_per_session": 4.72,
+  "outcome_distribution": {
+    "failure": 13,
+    "success": 122,
+    "partial": 7,
+    "escalated": 5,
+    "timeout": 3
+  },
+  "executive_summary": "The observability system tracked 150 agent sessions across three task categories (research, code review, system administration) with a 81.3% success rate. The system exhibits a concerning autonomy pattern, with 60.91% of actions executed as fully autonomous decisions and only 4.78% requiring human initiation. While tool success rates remain generally strong (73-93%), there is a critical oversight gap concentrated in the task_manager agent type operating on system_admin tasks, where 26% of sessions show inadequate supervision despite consequential actions being taken. The 9.1% overall failure rate and zero graceful failure mechanisms indicate insufficient error handling for agent-driven operations.",
+  "key_findings": [
+    "Autonomy imbalance: 60.91% fully autonomous actions with minimal human confirmation (16.36%), creating potential for uncontrolled agent behavior especially in system administration tasks",
+    "Critical oversight gap in task_manager: 26% oversight gap score for task_manager agents on system_admin category, with unsupervised consequential actions occurring (e.g., session b225aa09 with perfect 1.0 gap score)",
+    "Tool reliability variance: write_review (67.35%) and post_review (63.27%) show significantly lower success rates than data access tools (84-93%), suggesting quality issues in synthesis/output tools",
+    "Failure handling deficiency: 0% graceful failure rate indicates no recovery mechanisms; 13 failures out of 150 sessions with unknown failure types prevent root cause analysis and corrective action",
+    "Escalation underutilization: Only 3.33% mean escalation rate with just 5 high-risk escalations despite 7 identified high-risk sessions and multiple autonomy-heavy operations on consequential tasks"
+  ],
+  "concerns": [
+    "Unsupervised consequential actions: Task managers executing board updates and sprint planning with zero to minimal human oversight; session b225aa09 shows fully autonomous unsupervised action despite high-consequence nature",
+    "System administration autonomy risk: 26% of system_admin tasks lack adequate oversight despite potential for deployment, database migration, and team coordination impacts",
+    "Opacity in failure modes: 15 unknown failure types prevent diagnostic analysis; write_review and post_review tools show 30-37% failure rates without categorization",
+    "Inadequate escalation thresholds: Only 5 escalations for 150 sessions; research_assistant (10.28% failure rate) and code_reviewer (9.09% failure rate) show no correlation with escalation triggering",
+    "Missing graceful degradation: Zero graceful failures indicates agents continue operating or fail silently rather than safe shutdown; combined with 60.91% autonomy, this creates uncontrolled failure scenarios"
+  ]
+}
