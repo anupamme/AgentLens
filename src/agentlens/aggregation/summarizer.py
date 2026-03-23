@@ -12,6 +12,8 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import random
+import sys
 from abc import ABC, abstractmethod
 from collections import Counter
 
@@ -135,14 +137,26 @@ class BaseSummarizer(ABC):
     async def summarize_batch(
         self, traces: list[SessionTrace], max_concurrent: int = 5
     ) -> list[SessionSummary]:
-        """Summarize multiple traces with concurrency control."""
-        semaphore = asyncio.Semaphore(max_concurrent)
+        """Summarize multiple traces with concurrency control.
 
-        async def _summarize_one(trace: SessionTrace) -> SessionSummary:
-            async with semaphore:
-                return await self.summarize(trace)
-
-        return await asyncio.gather(*[_summarize_one(t) for t in traces])
+        When max_concurrent is 1 (recommended for rate-limited APIs like
+        Bedrock), traces are processed sequentially with a 1-second pause
+        between each. For higher concurrency, traces are processed in
+        chunks of max_concurrent with a pause between chunks.
+        """
+        results: list[SessionSummary] = []
+        for i in range(0, len(traces), max_concurrent):
+            chunk = traces[i : i + max_concurrent]
+            if len(chunk) == 1:
+                results.append(await self.summarize(chunk[0]))
+            else:
+                chunk_results = await asyncio.gather(
+                    *[self.summarize(t) for t in chunk]
+                )
+                results.extend(chunk_results)
+            if i + max_concurrent < len(traces):
+                await asyncio.sleep(1.0)
+        return results
 
 
 class MockSummarizer(BaseSummarizer):
@@ -227,17 +241,33 @@ class SessionSummarizer(BaseSummarizer):
 
         fields = _compute_base_fields(trace)
 
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=2000,
-            system=self.SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": self.USER_PROMPT_TEMPLATE.format(
-                    trace_json=trace.to_json()
-                ),
-            }],
-        )
+        max_retries = 6
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self.client.messages.create(
+                    model=self.model,
+                    max_tokens=2000,
+                    system=self.SYSTEM_PROMPT,
+                    messages=[{
+                        "role": "user",
+                        "content": self.USER_PROMPT_TEMPLATE.format(
+                            trace_json=trace.to_json()
+                        ),
+                    }],
+                )
+                break
+            except Exception as exc:
+                if "429" in str(exc) or "rate" in str(exc).lower():
+                    if attempt < max_retries:
+                        delay = min(2 ** attempt, 30) + random.uniform(0, 2)
+                        print(
+                            f"Rate limited on summarize (attempt {attempt + 1}/{max_retries + 1}), "
+                            f"retrying in {delay:.1f}s...",
+                            file=sys.stderr,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                raise
         raw_text = _strip_markdown_fences(response.content[0].text)
         try:
             llm_output = _json.loads(raw_text)
