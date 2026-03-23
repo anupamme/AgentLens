@@ -340,16 +340,27 @@ class SessionAggregator(BaseAggregator):
         max_retries = 6
         for attempt in range(max_retries + 1):
             try:
-                response = await self.client.messages.create(
-                    model=self.model,
-                    max_tokens=2000,
-                    system=self.NARRATIVE_SYSTEM_PROMPT,
-                    messages=[{
-                        "role": "user",
-                        "content": f"Generate a narrative report for this data:\n\n{context}",
-                    }],
+                response = await asyncio.wait_for(
+                    self.client.messages.create(
+                        model=self.model,
+                        max_tokens=2000,
+                        system=self.NARRATIVE_SYSTEM_PROMPT,
+                        messages=[{
+                            "role": "user",
+                            "content": f"Generate a narrative report for this data:\n\n{context}",
+                        }],
+                    ),
+                    timeout=120,
                 )
                 break
+            except asyncio.TimeoutError:
+                if attempt < max_retries:
+                    print(
+                        f"API call timed out (attempt {attempt + 1}/{max_retries + 1}), retrying...",
+                        file=sys.stderr,
+                    )
+                    continue
+                raise
             except Exception as exc:
                 if "429" in str(exc) or "rate" in str(exc).lower():
                     if attempt < max_retries:
