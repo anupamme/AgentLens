@@ -144,10 +144,12 @@ class WorkloadGenerator:
                 "The 'anthropic' package is required for WorkloadGenerator. "
                 "Install it with: pip install agentlens[workloads]"
             ) from e
+        client: anthropic.AsyncAnthropicBedrock | anthropic.AsyncAnthropic
         if aws_region:
-            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
         else:
-            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            client = anthropic.AsyncAnthropic(api_key=api_key)
+        self.client = client
         self.model = model
 
     async def generate(
@@ -221,13 +223,17 @@ class WorkloadGenerator:
                         continue
                 raise
 
-        raw = _strip_json_fences(response.content[0].text)
+        import anthropic as _anthropic
+        first_block = response.content[0]
+        if not isinstance(first_block, _anthropic.types.TextBlock):
+            return []
+        raw = _strip_json_fences(first_block.text)
         try:
             items = _json.loads(raw)
         except _json.JSONDecodeError:
             return []
 
-        tasks = []
+        tasks: list[TaskConfig] = []
         for item in items:
             try:
                 task = TaskConfig(

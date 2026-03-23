@@ -60,22 +60,22 @@ def analyze_tool_usage(summaries: list[SessionSummary]) -> ToolUsageAnalysis:
     tool_freq_by_agent = {k: dict(v) for k, v in tool_by_agent.items()}
 
     # Success rates: distribute tool_success_rate evenly across tools per session
-    tool_total_calls: Counter[str] = Counter()
-    tool_successful_calls: Counter[float] = Counter()
+    tool_total_calls: dict[str, float] = {}
+    tool_successful_calls: dict[str, float] = {}
     for s in summaries:
         if not s.tools_used:
             continue
         calls_per_tool = s.tool_call_count / len(s.tools_used)
         successes_per_tool = calls_per_tool * s.tool_success_rate
         for tool in s.tools_used:
-            tool_total_calls[tool] += calls_per_tool
-            tool_successful_calls[tool] += successes_per_tool
+            tool_total_calls[tool] = tool_total_calls.get(tool, 0.0) + calls_per_tool
+            tool_successful_calls[tool] = tool_successful_calls.get(tool, 0.0) + successes_per_tool
 
     tool_success_rates: dict[str, float] = {}
     for tool in tool_counter:
-        total = tool_total_calls.get(tool, 0)
+        total = tool_total_calls.get(tool, 0.0)
         if total > 0:
-            tool_success_rates[tool] = round(tool_successful_calls[tool] / total, 4)
+            tool_success_rates[tool] = round(tool_successful_calls.get(tool, 0.0) / total, 4)
         else:
             tool_success_rates[tool] = 0.0
 

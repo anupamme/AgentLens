@@ -87,7 +87,7 @@ class AggregateReport(BaseModel):
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     generated_at: datetime
     session_count: int
-    time_range: dict
+    time_range: dict[str, str]
 
     # --- Task Distribution ---
     task_category_distribution: dict[str, int]
@@ -98,7 +98,7 @@ class AggregateReport(BaseModel):
     autonomy_histogram: dict[str, float]
 
     # --- Tool Usage Patterns ---
-    tool_usage_ranking: list[dict]
+    tool_usage_ranking: list[dict[str, object]]
     most_common_tool_sequences: list[str]
 
     # --- Failure Taxonomy ---

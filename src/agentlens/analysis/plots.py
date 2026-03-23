@@ -25,7 +25,7 @@ def _check_matplotlib() -> bool:
         return False
 
 
-def _setup_style():
+def _setup_style() -> None:
     import matplotlib.pyplot as plt
     plt.style.use("seaborn-v0_8-whitegrid")
 
@@ -220,12 +220,13 @@ def plot_graceful_vs_silent(result: FailureAnalysis, output_path: str | Path) ->
     ]
     colors_used = [COLORS[2], COLORS[1]]
 
-    wedges, texts, autotexts = ax.pie(
+    ax.pie(
         sizes, labels=labels, colors=colors_used, autopct="%1.1f%%",
         startangle=90, pctdistance=0.75, textprops={"fontsize": 12},
     )
     # Donut hole
-    centre_circle = plt.Circle((0, 0), 0.50, fc="white")
+    from matplotlib.patches import Circle
+    centre_circle = Circle((0, 0), 0.50, fc="white")
     ax.add_patch(centre_circle)
     ax.set_title("Graceful vs Silent Failures", fontsize=14)
 
@@ -417,7 +418,8 @@ def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) 
     ax.set_ylim(0, 2)
     for i in range(2):
         for j in range(2):
-            ax.add_patch(plt.Rectangle((j, 1 - i), 1, 1, facecolor=cell_colors[i][j], alpha=0.3))
+            from matplotlib.patches import Rectangle
+            ax.add_patch(Rectangle((j, 1 - i), 1, 1, facecolor=cell_colors[i][j], alpha=0.3))
             ax.text(j + 0.5, 1.5 - i, labels_matrix[i][j],
                     ha="center", va="center", fontsize=13, fontweight="bold")
 
@@ -452,7 +454,7 @@ def plot_oversight_gap_histogram(result: OversightGapAnalysis, output_path: str 
     med_scores = [s for s in scores if 0.3 <= s < 0.7]
     high_scores = [s for s in scores if s >= 0.7]
 
-    bins = np.linspace(0, 1, 21)
+    bins: list[float] = list(np.linspace(0, 1, 21))
     if low_scores:
         ax.hist(low_scores, bins=bins, color=COLORS[2], alpha=0.7, label="Low (<0.3)")
     if med_scores:

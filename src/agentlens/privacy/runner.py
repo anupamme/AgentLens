@@ -11,6 +11,7 @@ from agentlens.aggregation.summarizer import BaseSummarizer, MockSummarizer
 from agentlens.privacy.leakage_test import PIILeakageReport, PIILeakageTest
 from agentlens.privacy.pii_generator import PIIGenerator
 from agentlens.privacy.reidentification_test import (
+    BaseAdversary,
     MockAdversary,
     ReidentificationResult,
     ReidentificationTest,
@@ -27,7 +28,7 @@ async def run_full_privacy_validation(
     num_reident_trials: int = 3,
     api_key: str | None = None,
     seed: int = 42,
-) -> dict:
+) -> dict[str, object]:
     """Run all three privacy validation experiments.
 
     Returns dict with all results.
@@ -39,7 +40,7 @@ async def run_full_privacy_validation(
     if use_mock:
         summarizer: BaseSummarizer = MockSummarizer()
         aggregator: BaseAggregator = MockAggregator()
-        adversary = MockAdversary(seed=seed)
+        adversary: BaseAdversary = MockAdversary(seed=seed)
     else:
         from agentlens.aggregation.aggregator import SessionAggregator
         from agentlens.aggregation.summarizer import SessionSummarizer
@@ -47,7 +48,7 @@ async def run_full_privacy_validation(
 
         summarizer = SessionSummarizer(api_key=api_key)
         aggregator = SessionAggregator(api_key=api_key)
-        adversary = LLMAdversary(api_key=api_key)
+        adversary = LLMAdversary(api_key=api_key or "")
 
     pii_gen = PIIGenerator(seed=seed)
 

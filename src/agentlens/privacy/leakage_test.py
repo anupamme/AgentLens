@@ -19,9 +19,9 @@ class PIILeakageReport:
     num_traces_tested: int = 0
     stage1_leakage_rate: float = 0.0
     stage1_leaked_types: dict[str, int] = field(default_factory=dict)
-    stage1_details: list[dict] = field(default_factory=list)
+    stage1_details: list[dict[str, object]] = field(default_factory=list)
     stage2_leakage_rate: float = 0.0
-    stage2_details: list[dict] = field(default_factory=list)
+    stage2_details: list[dict[str, object]] = field(default_factory=list)
     overall_pass: bool = True
 
 

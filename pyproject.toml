@@ -71,5 +71,19 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 
+[[tool.mypy.overrides]]
+module = [
+    "matplotlib",
+    "matplotlib.pyplot",
+    "matplotlib.patches",
+    "numpy",
+    "numpy.*",
+    "anthropic",
+    "anthropic.*",
+    "langchain_core",
+    "langchain_core.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

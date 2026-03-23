@@ -50,7 +50,7 @@ class ActionContext:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> None:
         elapsed_ns = time.monotonic_ns() - self._start_ns
         duration_ms = max(int(elapsed_ns // 1_000_000), 0)
 
@@ -75,4 +75,4 @@ class ActionContext:
             metadata=self._metadata,
         )
         self._on_complete(record)
-        return False  # re-raise exceptions
+        # Return None (falsy) — exceptions are not suppressed

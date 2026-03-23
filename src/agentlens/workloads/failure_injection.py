@@ -42,10 +42,10 @@ class FailableActionContext:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> None:
         if exc_type is None:
             self._apply_failure()
-        return self._inner.__exit__(exc_type, exc_val, exc_tb)
+        self._inner.__exit__(exc_type, exc_val, exc_tb)
 
     def _apply_failure(self) -> None:
         if self._failure_mode == FailureMode.TOOL_TIMEOUT:
@@ -121,7 +121,7 @@ class FailureInjector:
     """Factory for wrapping tools and tracers with failure injection."""
 
     @staticmethod
-    def wrap_tool(tool_fn: Callable, failure_mode: FailureMode) -> Callable:
+    def wrap_tool(tool_fn: Callable[..., Any], failure_mode: FailureMode) -> Callable[..., Any]:
         """Wrap a tool function to simulate failures."""
 
         def wrapped(*args: Any, **kwargs: Any) -> Any:

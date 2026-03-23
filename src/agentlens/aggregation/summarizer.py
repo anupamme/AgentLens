@@ -16,6 +16,7 @@ import random
 import re
 import sys
 from abc import ABC, abstractmethod
+from typing import Any
 
 from agentlens.aggregation.models import (
     AUTONOMY_KEY_MAP,
@@ -38,7 +39,7 @@ def _strip_markdown_fences(text: str) -> str:
     return stripped
 
 
-def _compute_base_fields(trace: SessionTrace) -> dict:
+def _compute_base_fields(trace: SessionTrace) -> dict[str, Any]:
     """Compute all deterministic summary fields from a SessionTrace."""
     actions = trace.actions
 
@@ -52,7 +53,7 @@ def _compute_base_fields(trace: SessionTrace) -> dict:
 
     # Tool usage
     tool_actions = [a for a in actions if a.tool_name is not None]
-    tools_used = sorted(set(a.tool_name for a in tool_actions))
+    tools_used = sorted(t for t in set(a.tool_name for a in tool_actions) if t is not None)
     tool_call_count = len(tool_actions)
     tool_successes = sum(1 for a in tool_actions if a.outcome == ActionOutcome.SUCCESS)
     tool_success_rate = tool_successes / tool_call_count if tool_call_count > 0 else 1.0

@@ -17,12 +17,13 @@ import sys
 from abc import ABC, abstractmethod
 from collections import Counter
 from datetime import datetime, timezone
+from typing import Any
 
 from agentlens.aggregation.models import AggregateReport, SessionSummary
 from agentlens.aggregation.summarizer import _strip_markdown_fences
 
 
-def compute_statistics(summaries: list[SessionSummary]) -> dict:
+def compute_statistics(summaries: list[SessionSummary]) -> dict[str, Any]:
     """Pure Python statistical aggregation. No LLM needed."""
     n = len(summaries)
     if n == 0:
@@ -41,7 +42,7 @@ def compute_statistics(summaries: list[SessionSummary]) -> dict:
     mean_autonomous_action_ratio = _safe_mean(autonomous_ratios)
 
     # Element-wise mean of autonomy distributions
-    all_keys = set()
+    all_keys: set[str] = set()
     for s in summaries:
         all_keys.update(s.autonomy_distribution.keys())
     autonomy_histogram = {}
@@ -51,8 +52,8 @@ def compute_statistics(summaries: list[SessionSummary]) -> dict:
 
     # Tool usage ranking
     tool_counts: Counter[str] = Counter()
-    tool_successes: Counter[str] = Counter()
-    tool_totals: Counter[str] = Counter()
+    tool_successes_f: dict[str, float] = {}
+    tool_totals_f: dict[str, float] = {}
     for s in summaries:
         for tool in s.tools_used:
             tool_counts[tool] += 1
@@ -60,14 +61,16 @@ def compute_statistics(summaries: list[SessionSummary]) -> dict:
         if s.tools_used and s.tool_call_count > 0:
             calls_per_tool = s.tool_call_count / len(s.tools_used)
             for tool in s.tools_used:
-                tool_totals[tool] += calls_per_tool
-                tool_successes[tool] += calls_per_tool * s.tool_success_rate
+                tool_totals_f[tool] = tool_totals_f.get(tool, 0.0) + calls_per_tool
+                tool_successes_f[tool] = (
+                    tool_successes_f.get(tool, 0.0) + calls_per_tool * s.tool_success_rate
+                )
 
     tool_usage_ranking = []
     for tool, count in tool_counts.most_common():
         success_rate = (
-            tool_successes[tool] / tool_totals[tool]
-            if tool_totals[tool] > 0 else 1.0
+            tool_successes_f[tool] / tool_totals_f[tool]
+            if tool_totals_f.get(tool, 0.0) > 0 else 1.0
         )
         tool_usage_ranking.append({
             "tool": tool,
@@ -175,14 +178,14 @@ def compute_statistics(summaries: list[SessionSummary]) -> dict:
     }
 
 
-def _safe_mean(values: list[float]) -> float:
+def _safe_mean(values: list[float] | list[int]) -> float:
     """Compute mean, returning 0.0 for empty lists."""
     if not values:
         return 0.0
     return statistics.mean(values)
 
 
-def _empty_stats() -> dict:
+def _empty_stats() -> dict[str, Any]:
     """Return an empty statistics dictionary for zero summaries."""
     return {
         "session_count": 0,
@@ -315,8 +318,8 @@ class SessionAggregator(BaseAggregator):
         )
 
     async def _generate_narrative(
-        self, stats: dict, summaries: list[SessionSummary]
-    ) -> dict:
+        self, stats: dict[str, Any], summaries: list[SessionSummary]
+    ) -> dict[str, Any]:
         """Use LLM to generate executive_summary, key_findings, and concerns."""
         import json
 

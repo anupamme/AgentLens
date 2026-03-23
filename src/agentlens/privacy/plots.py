@@ -8,7 +8,7 @@ from agentlens.privacy.reidentification_test import ReidentificationResult
 from agentlens.privacy.utility_tradeoff import UtilityPrivacyReport
 
 
-def _check_matplotlib():
+def _check_matplotlib() -> bool:
     try:
         import importlib.util
         return importlib.util.find_spec("matplotlib") is not None

@@ -14,7 +14,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-from agentlens.aggregation.aggregator import MockAggregator, SessionAggregator
+from agentlens.aggregation.aggregator import BaseAggregator, MockAggregator, SessionAggregator
 from agentlens.aggregation.models import SessionSummary
 from agentlens.aggregation.pipeline import AgentLensPipeline
 
@@ -159,6 +159,7 @@ async def _cmd_aggregate(args: argparse.Namespace) -> None:
         print(f"No summaries found in {args.summaries_dir}", file=sys.stderr)
         sys.exit(1)
 
+    aggregator: BaseAggregator
     if args.mock:
         aggregator = MockAggregator()
     else:
