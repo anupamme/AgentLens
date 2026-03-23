@@ -14,7 +14,7 @@ def main() -> None:
     parser.add_argument(
         "--traces-dir",
         default=None,
-        help="Directory containing trace files (JSON/JSONL). If omitted, generates synthetic traces.",
+        help="Directory containing trace files (JSON/JSONL). Omit to generate synthetic traces.",
     )
     parser.add_argument(
         "--output-dir",

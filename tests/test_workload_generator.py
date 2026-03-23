@@ -1,8 +1,7 @@
 """Tests for MockWorkloadGenerator."""
 
-import pytest
 
-from agentlens.workloads.generator import Difficulty, FailureMode, TaskConfig
+from agentlens.workloads.generator import Difficulty, FailureMode
 from agentlens.workloads.mock_generator import MockWorkloadGenerator
 
 

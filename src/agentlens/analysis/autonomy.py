@@ -59,7 +59,9 @@ def analyze_autonomy(summaries: list[SessionSummary]) -> AutonomyAnalysis:
     median_val = round(statistics.median(ratios), 4)
 
     # High autonomy: sessions where fully_autonomous > 0.8
-    high_autonomy = [s for s in summaries if s.autonomy_distribution.get("fully_autonomous", 0.0) > 0.8]
+    high_autonomy = [
+        s for s in summaries if s.autonomy_distribution.get("fully_autonomous", 0.0) > 0.8
+    ]
     high_count = len(high_autonomy)
     high_fraction = round(high_count / len(summaries), 4)
 

@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: ruff check src/ tests/
-      - run: mypy src/agentlens/schema/
+      - run: mypy src/agentlens/
 
   test:
     runs-on: ubuntu-latest

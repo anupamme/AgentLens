@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 from agentlens.aggregation.aggregator import BaseAggregator
 from agentlens.aggregation.models import AggregateReport, SessionSummary
@@ -37,7 +38,7 @@ class BaseAdversary(ABC):
         candidate_summaries: list[SessionSummary],
         report: AggregateReport,
         num_targets: int,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Return list of dicts with 'session_id' and 'confidence' for guessed targets."""
         ...
 
@@ -53,11 +54,11 @@ class MockAdversary(BaseAdversary):
         candidate_summaries: list[SessionSummary],
         report: AggregateReport,
         num_targets: int,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         all_ids = [s.session_id for s in candidate_summaries]
         # Guess at the base rate: num_targets / total
         guess_rate = num_targets / len(all_ids) if all_ids else 0.5
-        guesses: list[dict] = []
+        guesses: list[dict[str, Any]] = []
         for sid in all_ids:
             if self._rng.random() < guess_rate:
                 guesses.append({
@@ -96,12 +97,12 @@ class LLMAdversary(BaseAdversary):
         self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = model
 
-    def _compact_candidate(self, summary: SessionSummary) -> dict:
+    def _compact_candidate(self, summary: SessionSummary) -> dict[str, object]:
         """Extract only the fields relevant for re-identification."""
         full = summary.model_dump()
         return {k: full[k] for k in self._CANDIDATE_FIELDS if k in full}
 
-    def _compact_report(self, report: AggregateReport) -> dict:
+    def _compact_report(self, report: AggregateReport) -> dict[str, object]:
         """Extract only the fields relevant for re-identification."""
         full = report.model_dump()
         return {k: full[k] for k in self._REPORT_FIELDS if k in full}
@@ -111,7 +112,7 @@ class LLMAdversary(BaseAdversary):
         candidate_summaries: list[SessionSummary],
         report: AggregateReport,
         num_targets: int,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         import json
 
         # Sample candidates if the list is too large
@@ -147,8 +148,12 @@ class LLMAdversary(BaseAdversary):
             messages=[{"role": "user", "content": prompt}],
         )
 
+        import anthropic as _anthropic
+        _first_block = response.content[0]
+        if not isinstance(_first_block, _anthropic.types.TextBlock):
+            return []
         try:
-            raw = response.content[0].text.strip()
+            raw = _first_block.text.strip()
             # Strip markdown fences if present
             if raw.startswith("```"):
                 raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
@@ -205,9 +210,10 @@ class ReidentificationTest:
         fpr = false_positives / max(num_decoys, 1)
         precision = true_positives / max(len(guessed_ids), 1)
         recall = tpr
-        f1 = (2 * precision * recall / max(precision + recall, 1e-10)) if (precision + recall) > 0 else 0.0
+        denom = max(precision + recall, 1e-10)
+        f1 = (2 * precision * recall / denom) if (precision + recall) > 0 else 0.0
 
-        confidences = [g["confidence"] for g in guesses] if guesses else [0.0]
+        confidences = [float(g["confidence"]) for g in guesses] if guesses else [0.0]
         mean_confidence = sum(confidences) / len(confidences)
 
         random_baseline = num_targets / max(num_targets + num_decoys, 1)

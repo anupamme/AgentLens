@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from typing import Any
 from uuid import uuid4
 
 from agentlens.workloads.generator import Difficulty, FailureMode, TaskConfig
@@ -15,7 +16,7 @@ _FAILURE_MODES_WITH_INJECTION = [
     FailureMode.PARTIAL_FAILURE,
 ]
 
-TEMPLATES: dict[str, list[dict]] = {
+TEMPLATES: dict[str, list[dict[str, Any]]] = {
     "code_reviewer": [
         {"prompt": "Review the authentication module for SQL injection vulnerabilities and suggest fixes.", "difficulty": "hard", "expected_tool_count": 5, "expected_autonomy_pattern": "mixed", "metadata": {"domain": "security"}},
         {"prompt": "Check the REST API endpoints for proper error handling and response codes.", "difficulty": "medium", "expected_tool_count": 4, "expected_autonomy_pattern": "mixed", "metadata": {"domain": "api"}},

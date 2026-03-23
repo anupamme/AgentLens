@@ -8,10 +8,10 @@ from agentlens.privacy.reidentification_test import ReidentificationResult
 from agentlens.privacy.utility_tradeoff import UtilityPrivacyReport
 
 
-def _check_matplotlib():
+def _check_matplotlib() -> bool:
     try:
-        import matplotlib
-        return True
+        import importlib.util
+        return importlib.util.find_spec("matplotlib") is not None
     except ImportError:
         return False
 
@@ -35,8 +35,14 @@ def plot_reidentification_vs_batch_size(
     fprs = [r.false_positive_rate for r in results]
     baselines = [r.random_baseline_tpr for r in results]
 
-    ax.plot(batch_sizes, tprs, "o-", color="#2196F3", linewidth=2, markersize=8, label="True Positive Rate")
-    ax.plot(batch_sizes, fprs, "s-", color="#F44336", linewidth=2, markersize=8, label="False Positive Rate")
+    ax.plot(
+        batch_sizes, tprs, "o-",
+        color="#2196F3", linewidth=2, markersize=8, label="True Positive Rate",
+    )
+    ax.plot(
+        batch_sizes, fprs, "s-",
+        color="#F44336", linewidth=2, markersize=8, label="False Positive Rate",
+    )
     ax.plot(batch_sizes, baselines, "--", color="#9E9E9E", linewidth=1.5, label="Random Baseline")
 
     ax.set_xlabel("Batch Size", fontsize=12)
@@ -89,7 +95,8 @@ def plot_utility_privacy_tradeoff(
     rec_idx = levels.index(report.recommended_level) if report.recommended_level in levels else 0
     ax1.plot(
         levels[rec_idx], utilities[rec_idx], "*",
-        color="#4CAF50", markersize=20, zorder=5, label=f"Recommended (L{report.recommended_level})",
+        color="#4CAF50", markersize=20, zorder=5,
+        label=f"Recommended (L{report.recommended_level})",
     )
 
     ax1.set_title("Utility-Privacy Trade-off", fontsize=14)

@@ -25,7 +25,7 @@ def _check_matplotlib() -> bool:
         return False
 
 
-def _setup_style():
+def _setup_style() -> None:
     import matplotlib.pyplot as plt
     plt.style.use("seaborn-v0_8-whitegrid")
 
@@ -70,8 +70,16 @@ def plot_autonomy_histogram(result: AutonomyAnalysis, output_path: str | Path) -
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.hist(result.autonomy_ratio_histogram, bins=20, color=COLORS[0], alpha=0.7, edgecolor="white")
-    ax.axvline(result.mean, color=COLORS[1], linestyle="--", linewidth=2, label=f"Mean={result.mean:.3f}")
-    ax.axvline(result.median, color=COLORS[2], linestyle="-.", linewidth=2, label=f"Median={result.median:.3f}")
+    ax.axvline(
+        result.mean, color=COLORS[1], linestyle="--", linewidth=2, label=f"Mean={result.mean:.3f}"
+    )
+    ax.axvline(
+        result.median,
+        color=COLORS[2],
+        linestyle="-.",
+        linewidth=2,
+        label=f"Median={result.median:.3f}",
+    )
 
     ax.set_xlabel("Fully Autonomous Ratio", fontsize=12)
     ax.set_ylabel("Count", fontsize=12)
@@ -183,7 +191,7 @@ def plot_failure_by_autonomy(result: FailureAnalysis, output_path: str | Path) -
 
     fig, ax = plt.subplots(figsize=(10, 6))
     levels = sorted(result.failure_rate_by_autonomy_level.keys())
-    rates = [result.failure_rate_by_autonomy_level[l] for l in levels]
+    rates = [result.failure_rate_by_autonomy_level[lvl] for lvl in levels]
 
     ax.bar(levels, rates, color=[COLORS[i % len(COLORS)] for i in range(len(levels))])
     ax.set_xlabel("Dominant Autonomy Level", fontsize=12)
@@ -212,12 +220,13 @@ def plot_graceful_vs_silent(result: FailureAnalysis, output_path: str | Path) ->
     ]
     colors_used = [COLORS[2], COLORS[1]]
 
-    wedges, texts, autotexts = ax.pie(
+    ax.pie(
         sizes, labels=labels, colors=colors_used, autopct="%1.1f%%",
         startangle=90, pctdistance=0.75, textprops={"fontsize": 12},
     )
     # Donut hole
-    centre_circle = plt.Circle((0, 0), 0.50, fc="white")
+    from matplotlib.patches import Circle
+    centre_circle = Circle((0, 0), 0.50, fc="white")
     ax.add_patch(centre_circle)
     ax.set_title("Graceful vs Silent Failures", fontsize=14)
 
@@ -384,7 +393,8 @@ def plot_escalation_reasons(result: EscalationAnalysis, output_path: str | Path)
 
 
 def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) -> None:
-    """2x2 matrix: appropriate escalation / false escalation / appropriate autonomy / missed escalation."""
+    """2x2 matrix: appropriate escalation / false escalation / appropriate autonomy /
+    missed escalation."""
     if not _check_matplotlib():
         return
     import matplotlib.pyplot as plt
@@ -398,10 +408,6 @@ def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) 
     appropriate_esc = 1.0 - false_esc if false_esc <= 1.0 else 0.0
     appropriate_auto = 1.0 - missed_esc if missed_esc <= 1.0 else 0.0
 
-    matrix = [
-        [appropriate_esc, false_esc],
-        [missed_esc, appropriate_auto],
-    ]
     labels_matrix = [
         [f"Appropriate\nEscalation\n{appropriate_esc:.0%}", f"False\nEscalation\n{false_esc:.0%}"],
         [f"Missed\nEscalation\n{missed_esc:.0%}", f"Appropriate\nAutonomy\n{appropriate_auto:.0%}"],
@@ -412,7 +418,8 @@ def plot_escalation_matrix(result: EscalationAnalysis, output_path: str | Path) 
     ax.set_ylim(0, 2)
     for i in range(2):
         for j in range(2):
-            ax.add_patch(plt.Rectangle((j, 1 - i), 1, 1, facecolor=cell_colors[i][j], alpha=0.3))
+            from matplotlib.patches import Rectangle
+            ax.add_patch(Rectangle((j, 1 - i), 1, 1, facecolor=cell_colors[i][j], alpha=0.3))
             ax.text(j + 0.5, 1.5 - i, labels_matrix[i][j],
                     ha="center", va="center", fontsize=13, fontweight="bold")
 
@@ -447,7 +454,7 @@ def plot_oversight_gap_histogram(result: OversightGapAnalysis, output_path: str 
     med_scores = [s for s in scores if 0.3 <= s < 0.7]
     high_scores = [s for s in scores if s >= 0.7]
 
-    bins = np.linspace(0, 1, 21)
+    bins: list[float] = list(np.linspace(0, 1, 21))
     if low_scores:
         ax.hist(low_scores, bins=bins, color=COLORS[2], alpha=0.7, label="Low (<0.3)")
     if med_scores:

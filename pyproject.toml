@@ -7,12 +7,35 @@ name = "agentlens"
 version = "0.1.0"
 description = "Privacy-preserving observability framework for LLM agents"
 readme = "README.md"
-license = "MIT"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
+authors = [
+    {name = "Anupam Mediratta", email = "anupamme@gmail.com"},
+]
+keywords = ["llm", "agents", "observability", "privacy", "tracing", "oversight"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "pydantic>=2.0",
     "xxhash>=3.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/anupamme/AgentLens"
+Repository = "https://github.com/anupamme/AgentLens"
+Issues = "https://github.com/anupamme/AgentLens/issues"
+Documentation = "https://github.com/anupamme/AgentLens/blob/main/README.md"
 
 [project.optional-dependencies]
 dev = [
@@ -47,6 +70,20 @@ python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "matplotlib",
+    "matplotlib.pyplot",
+    "matplotlib.patches",
+    "numpy",
+    "numpy.*",
+    "anthropic",
+    "anthropic.*",
+    "langchain_core",
+    "langchain_core.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

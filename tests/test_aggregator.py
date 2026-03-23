@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from agentlens.schema.enums import SessionOutcome, TaskCategory
-from agentlens.aggregation.models import AggregateReport, SessionSummary
 from agentlens.aggregation.aggregator import MockAggregator, compute_statistics
+from agentlens.aggregation.models import AggregateReport, SessionSummary
+from agentlens.schema.enums import SessionOutcome, TaskCategory
 
 
 def make_summary(**overrides):

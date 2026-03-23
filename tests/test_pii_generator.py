@@ -3,8 +3,6 @@
 from dataclasses import fields
 from datetime import datetime, timezone
 
-import pytest
-
 from agentlens.privacy.pii_generator import PIIGenerator, SyntheticPII
 from agentlens.schema.enums import (
     ActionOutcome,

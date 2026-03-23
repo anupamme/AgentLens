@@ -13,23 +13,21 @@ from __future__ import annotations
 
 import asyncio
 import random
+import re
 import sys
 from abc import ABC, abstractmethod
-from collections import Counter
+from typing import Any
 
-import re
-
-from agentlens.schema.enums import (
-    ActionOutcome,
-    ActionType,
-    AutonomyLevel,
-)
-from agentlens.schema.trace import SessionTrace
 from agentlens.aggregation.models import (
     AUTONOMY_KEY_MAP,
     CONSEQUENTIAL_ACTION_TYPES,
     SessionSummary,
 )
+from agentlens.schema.enums import (
+    ActionOutcome,
+    AutonomyLevel,
+)
+from agentlens.schema.trace import SessionTrace
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -41,7 +39,7 @@ def _strip_markdown_fences(text: str) -> str:
     return stripped
 
 
-def _compute_base_fields(trace: SessionTrace) -> dict:
+def _compute_base_fields(trace: SessionTrace) -> dict[str, Any]:
     """Compute all deterministic summary fields from a SessionTrace."""
     actions = trace.actions
 
@@ -55,7 +53,7 @@ def _compute_base_fields(trace: SessionTrace) -> dict:
 
     # Tool usage
     tool_actions = [a for a in actions if a.tool_name is not None]
-    tools_used = sorted(set(a.tool_name for a in tool_actions))
+    tools_used = sorted(t for t in set(a.tool_name for a in tool_actions) if t is not None)
     tool_call_count = len(tool_actions)
     tool_successes = sum(1 for a in tool_actions if a.outcome == ActionOutcome.SUCCESS)
     tool_success_rate = tool_successes / tool_call_count if tool_call_count > 0 else 1.0
@@ -208,7 +206,8 @@ class SessionSummarizer(BaseSummarizer):
         "- action_sequence_summary (arrow-separated flow)\n"
         "- total_actions, autonomy_distribution (as fractions summing to 1.0)\n"
         "- tools_used, tool_call_count, tool_success_rate\n"
-        "- failure_count, failure_types, escalation_count, escalation_reasons, did_fail_gracefully\n"
+        "- failure_count, failure_types, escalation_count, escalation_reasons,"
+        " did_fail_gracefully\n"
         "- duration_seconds, total_latency_ms\n"
         "- session_outcome\n"
         "- consequential_action_count, unsupervised_consequential_count, oversight_gap_score"
@@ -227,10 +226,14 @@ class SessionSummarizer(BaseSummarizer):
                 "The 'anthropic' package is required for SessionSummarizer. "
                 "Install it with: pip install agentlens[aggregation]"
             ) from e
+        _client: (
+            anthropic.AsyncAnthropicBedrock | anthropic.AsyncAnthropic
+        )
         if aws_region:
-            self.client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
+            _client = anthropic.AsyncAnthropicBedrock(aws_region=aws_region)
         else:
-            self.client = anthropic.AsyncAnthropic(api_key=api_key)
+            _client = anthropic.AsyncAnthropic(api_key=api_key)
+        self.client = _client
         self.model = model
 
     async def summarize(self, trace: SessionTrace) -> SessionSummary:
@@ -264,8 +267,9 @@ class SessionSummarizer(BaseSummarizer):
                 break
             except asyncio.TimeoutError:
                 if attempt < max_retries:
+                    attempt_info = f"{attempt + 1}/{max_retries + 1}"
                     print(
-                        f"API call timed out (attempt {attempt + 1}/{max_retries + 1}), retrying...",
+                        f"API call timed out (attempt {attempt_info}), retrying...",
                         file=sys.stderr,
                     )
                     continue
@@ -282,13 +286,20 @@ class SessionSummarizer(BaseSummarizer):
                         await asyncio.sleep(delay)
                         continue
                 raise
-        raw_text = _strip_markdown_fences(response.content[0].text)
+        import anthropic as _anthropic
+        _first_block = response.content[0]
+        if not isinstance(_first_block, _anthropic.types.TextBlock):
+            raise ValueError(
+                f"Unexpected LLM response block type for session "
+                f"{trace.session_id}: {type(_first_block).__name__}"
+            )
+        raw_text = _strip_markdown_fences(_first_block.text)
         try:
             llm_output = _json.loads(raw_text)
         except _json.JSONDecodeError as exc:
             raise ValueError(
                 f"Failed to parse LLM JSON for session {trace.session_id}: {exc}\n"
-                f"Raw LLM output:\n{response.content[0].text[:500]}"
+                f"Raw LLM output:\n{_first_block.text[:500]}"
             ) from exc
 
         # Use LLM-generated text fields, fall back to deterministic values

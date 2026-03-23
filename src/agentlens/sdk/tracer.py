@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
@@ -37,7 +38,7 @@ class AgentTracer:
         self._actions: list[ActionRecord] = []
         self._escalations: list[EscalationEvent] = []
         self._session_id: str | None = None
-        self._start_time = None
+        self._start_time: datetime | None = None
         self._session_metadata: dict[str, Any] = {}
         self._trace: SessionTrace | None = None
 

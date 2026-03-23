@@ -14,6 +14,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from agentlens.workloads.generator import TaskConfig
 from agentlens.workloads.mock_generator import MockWorkloadGenerator
@@ -21,7 +22,7 @@ from agentlens.workloads.runner import WorkloadRunner
 from agentlens.workloads.validator import TraceValidator
 
 
-def _load_traces_from_dir(traces_dir: Path) -> list:
+def _load_traces_from_dir(traces_dir: Path) -> list[Any]:
     """Load traces from JSONL files, skipping non-trace JSON files."""
     from agentlens.schema.trace import SessionTrace
 
@@ -88,18 +89,19 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 async def _cmd_generate(args: argparse.Namespace) -> None:
+    tasks: list[TaskConfig]
     if args.mock:
-        gen = MockWorkloadGenerator(seed=args.seed)
-        tasks = gen.generate(agent_type=args.agent_type, count=args.count)
+        mock_gen = MockWorkloadGenerator(seed=args.seed)
+        tasks = mock_gen.generate(agent_type=args.agent_type, count=args.count)
     else:
         from agentlens.workloads.generator import WorkloadGenerator
-        gen_kwargs: dict = {}
+        gen_kwargs: dict[str, Any] = {}
         if args.aws_region:
             gen_kwargs["aws_region"] = args.aws_region
         if args.model:
             gen_kwargs["model"] = args.model
-        gen = WorkloadGenerator(**gen_kwargs)
-        tasks = await gen.generate(agent_type=args.agent_type, count=args.count)
+        llm_gen = WorkloadGenerator(**gen_kwargs)
+        tasks = await llm_gen.generate(agent_type=args.agent_type, count=args.count)
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -179,15 +181,15 @@ async def _cmd_campaign(args: argparse.Namespace) -> None:
 
     # Step 1: Generate
     print("Step 1: Generating workloads...")
-    gen = MockWorkloadGenerator(seed=args.seed) if args.mock else None
+    mock_gen2 = MockWorkloadGenerator(seed=args.seed) if args.mock else None
     all_workloads: dict[str, list[TaskConfig]] = {}
 
     for agent_type, count in counts.items():
-        if args.mock:
-            tasks = gen.generate(agent_type=agent_type, count=count)
+        if args.mock and mock_gen2 is not None:
+            tasks = mock_gen2.generate(agent_type=agent_type, count=count)
         else:
             from agentlens.workloads.generator import WorkloadGenerator
-            gen_kwargs: dict = {}
+            gen_kwargs: dict[str, Any] = {}
             if args.aws_region:
                 gen_kwargs["aws_region"] = args.aws_region
             if args.model:
